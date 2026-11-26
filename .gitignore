@@ -14,3 +14,6 @@ Thumbs.db
 # Pages-Build und Offline-Paket (entstehen beim Bauen)
 _site/
 SC_Cockpit_Offline.zip
+
+# Quelle des Komponenten-Planers im Workflow
+_schiffskauf/
