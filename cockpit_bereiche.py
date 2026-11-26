@@ -16,7 +16,7 @@
 #   der Bereiche und lädt deren große Dateien nicht. Namen von Waren und der
 #   Lagerwert stehen deshalb nur im Logbuch selbst.
 #
-#   Bereiche, die noch nicht eingezogen sind (Werkstatt, Guides, Pilot),
+#   Bereiche, die noch nicht eingezogen sind (Werkstatt, Guides),
 #   zeigen, was das Cockpit schon weiß, und führen in das bisherige Tool. So
 #   ist kein Bereich eine Sackgasse, solange der Umzug läuft.
 #
@@ -24,11 +24,12 @@
 #   Planer ein. Dessen Quelle bleibt im Repo StarCitizen-Schiffskauf-Planer
 #   (eine Stelle für neue Schiffe), der Bau holt sie von dort. Seit 0.3.0
 #   hängt FRACHT_JS genauso das Fracht-Logbuch aus dem Repo
-#   StarCitizen-Handels-Planer ein. Ist eine Quelle beim Bau nicht
-#   erreichbar, bleibt für den Bereich der Wegweiser aus BEREICHE.
+#   StarCitizen-Handels-Planer ein, seit 0.5.0 PILOT_JS dessen Reiter Ruf
+#   und Sitzungen. Ist eine Quelle beim Bau nicht erreichbar, bleibt für den
+#   Bereich der Wegweiser aus BEREICHE.
 #
-#   Reihenfolge des weiteren Umzugs: Werkstatt, Pilot und Guides; Routen
-#   und Waren folgen dem Logbuch.
+#   Reihenfolge des weiteren Umzugs: Werkstatt und Guides; Routen und Waren
+#   folgen dem Logbuch.
 # =============================================================================
 """Area scripts of the cockpit; each becomes its own lazily loaded file under bereiche/."""
 from __future__ import annotations
@@ -90,7 +91,7 @@ function fracht(){const led=read('scha_ledger_v1'), stock=(led&&Array.isArray(le
 
 // Last session the sessions tab of the trade planner has read (its cache holds archived logs, not the running one).
 function sitzung(){const c=read('scha_sessions_cache_v2'), all=c&&typeof c==='object'?Object.values(c).filter(s=>s&&s.start):[];
-  if(!all.length) return `<p class="ck-pempty">${T('Noch keine Sitzung gelesen. Der Reiter „Sitzungen“ im Handels-Planer liest deine Spiel-Logs, nur auf deinem Rechner.','No session read yet. The “Sessions” tab of the trade planner reads your game logs, on your computer only.')}</p>`;
+  if(!all.length) return `<p class="ck-pempty">${T('Noch keine Sitzung gelesen. Unter „Pilot“ liest der Reiter „Sitzungen“ deine Spiel-Logs, nur auf deinem Rechner.','No session read yet. Under “Pilot” the “Sessions” tab reads your game logs, on your computer only.')}</p>`;
   const s=all.sort((a,b)=>String(b.start).localeCompare(String(a.start)))[0], j=Array.isArray(s.joins)&&s.joins.length?s.joins[s.joins.length-1]:null;
   const end={crash:['⚠ Absturz','⚠ crash'],ok:['normal beendet','ended normally'],open:['offen','open']}[s.ended]||['',''];
   return `<ul class="ck-plist"><li><b>${esc(when(s.start)||'–')}</b><span>${esc(T(...end))}</span></li>
@@ -98,6 +99,14 @@ function sitzung(){const c=read('scha_sessions_cache_v2'), all=c&&typeof c==='ob
     ${s.ship?`<li><b>🚀 ${esc(pretty(s.ship.raw))}</b><span>${T('letztes Schiff','last ship')}</span></li>`:''}
     ${j&&j.shard?`<li><b>${esc(j.shard)}</b><span>Shard</span></li>`:''}</ul>
     <p class="ck-pmore">${T('Stand der zuletzt gelesenen, abgeschlossenen Sitzung.','State of the last finished session that was read.')}</p>`;}
+
+// Reputation as the pilot area last saw it: favourites first, then whoever is closest to the next rank.
+function ruf(){const d=read('sc_cockpit_ruf'), rows=d&&Array.isArray(d.o)?d.o:[];
+  if(!rows.length) return `<p class="ck-pempty">${T('Noch kein Ruf abgeglichen. Unter „Pilot“ gleichst du einmal Rang und Balken aus dem mobiGlas ab.','No reputation aligned yet. Under “Pilot” you align rank and bar from the mobiGlas once.')}</p>`;
+  const list=rows.map(([org,rank,cur,next,nxp,lo,hi,fav])=>{const mid=(lo+hi)/2, pct=next&&nxp>cur?Math.max(0,Math.min(100,Math.round((mid-cur)/(nxp-cur)*100))):null; return {org,rank,next,pct,fav};})
+    .sort((a,b)=>b.fav-a.fav||(b.pct??-1)-(a.pct??-1)).slice(0,5);
+  return `<ul class="ck-plist">${list.map(r=>`<li><b>${r.fav?'★ ':''}${esc(r.org)}</b><small>${esc(r.rank||'')}${r.next?` → ${esc(r.next)}`:''}</small><span>${r.pct==null?T('höchster Rang','top rank'):'≈ '+r.pct+' %'}</span></li>`).join('')}</ul>
+    <p class="ck-pmore">${T('Schätzung, Stand','Estimate, as of')} ${esc(when(d.t))}.</p>`;}
 
 const panel=(cls,title,body,key,linkTxt)=>`<section class="ck-panel ${cls}"><h2>${esc(title)}</h2>${body}${key?`<a class="ck-plink" href="#/${key}">${esc(linkTxt)} <span aria-hidden="true">→</span></a>`:''}</section>`;
 function render(el){const first=!SCData.items().length&&!(window.SCFleet&&SCFleet.read().ships.length)&&!read('scha_ledger_v1');
@@ -108,15 +117,17 @@ function render(el){const first=!SCData.items().length&&!(window.SCFleet&&SCFlee
       ${panel('ck-ptodo',T('Zu erledigen','To do')+(SCData.open().length?` (${SCData.open().length})`:''),todo())}
       ${panel('',T('Flotte','Fleet'),flotte(),'flotte',T('Zur Flotte','To the fleet'))}
       ${panel('',T('Fracht','Cargo'),fracht(),'fracht',T('Zum Logbuch','To the ledger'))}
-      ${panel('',T('Letzte Sitzung','Last session'),sitzung(),'pilot',T('Zum Piloten','To the pilot'))}
+      ${panel('ck-psess',T('Letzte Sitzung','Last session'),sitzung(),'pilot',T('Zu den Sitzungen','To the sessions'))}
+      ${panel('',T('Ruf','Reputation'),ruf(),'pilot',T('Zum Ruf','To the reputation'))}
       ${panel('',T('Werkstatt','Workshop'),`<p class="ck-pempty">${T('Baupläne und Wikelo sind noch im bisherigen Tool.','Blueprints and Wikelo are still in the existing tool.')}</p>`,'werkstatt',T('Zur Werkstatt','To the workshop'))}
       ${panel('','Guides',`<p class="ck-pempty">${T('Flyer und Karten zum Lesen und Ausdrucken.','Flyers and maps to read and to print.')}</p>`,'guides',T('Zu den Guides','To the guides'))}
     </div>`;
   // Tick a reminder; the board is drawn again by the change, so focus goes to the next open one.
   el.querySelector('.ck-board').addEventListener('change',e=>{const c=e.target.closest('input[data-id]'); if(!c) return;
     SCData.toggle(c.dataset.id,true); (document.querySelector('#ck-main .ck-ptodo input[data-id]')||document.querySelector('#ck-main h1'))?.focus({preventScroll:true});});
-  // Open the place of a group in the cargo ledger.
-  el.querySelector('.ck-board').addEventListener('click',e=>{const b=e.target.closest('.ck-open'); if(!b) return;
+  // Open the place of a group in the cargo ledger; the session panel's link opens the sessions tab of the pilot.
+  el.querySelector('.ck-board').addEventListener('click',e=>{if(e.target.closest('.ck-psess .ck-plink')){C.intent={tab:'sessions'}; return;}
+    const b=e.target.closest('.ck-open'); if(!b) return;
     C.intent={loc:b.dataset.loc||null,shop:b.dataset.shop||null}; C.go('fracht');});}
 Cockpit.register('uebersicht',{render});
 })();
@@ -155,7 +166,7 @@ Cockpit.register('guides',{render(el){Cockpit.placeholder(el,{title:['Guides','G
     tools:[{ico:'📚',name:['Guides-Übersicht','Guides overview'],what:['Alle Guides auf Deutsch und Englisch, als Seite und PDF.','All guides in German and English, as page and PDF.'],url:'__guides__'}]});}});
 """,
     "pilot": r"""
-/* ---------- pilot (not moved in yet) ---------- */
+/* ---------- pilot: fallback when reputation and sessions could not be built ---------- */
 Cockpit.register('pilot',{render(el){Cockpit.placeholder(el,{title:['Pilot','Pilot'],
     lede:['Was an dir als Spieler hängt: der Ruf je Organisation und deine Spielsitzungen mit Shard, Ort, Schiff und Absturz.','What belongs to you as a player: reputation per organisation and your play sessions with shard, place, ship and crash.'],
     tools:[{ico:'📈',name:['Handels-Planer','Trade planner'],what:['Reiter „Ruf“ und „Sitzungen“. Beide lesen deine Spiel-Logs nur auf deinem Rechner.','“Reputation” and “Sessions” tabs. Both read your game logs on your computer only.'],url:'__handel__'}]});}});
@@ -307,6 +318,75 @@ def fracht_script(lb_html: str, lb_css: str, lb_js: str) -> str:
                         ("/*LB_JS*/", lb_js), ("__handel__", URL["handel"]), ("__auswerter__", URL["auswerter"])]:
         if js.count(mark) != 1:
             raise ValueError(f"Marke {mark} fehlt in der Fracht-Vorlage")
+        js = js.replace(mark, value)
+    return js.strip() + "\n"
+
+
+#: Pilot area with reputation and sessions. Both tabs (markup, styles, script, reputation table) come from
+#: the StarCitizen-Handels-Planer sources at build time. The wrapper gives them the two things they took
+#: from their page: the places of the cargo ledger (to name the last place of a session) and the jump there.
+PILOT_JS = r"""
+/* ---------- pilot: reputation and sessions (source: StarCitizen-Handels-Planer) ---------- */
+(function(){
+let node=null, X=null, tab='rep', sumTimer=0;
+const HEAD=`<h1>Pilot</h1>
+  <p class="ck-lede"><span class="de">Dein Ruf je Organisation und deine Spielsitzungen. Beide lesen deine Spiel-Logs nur auf deinem Rechner; es wird nichts hochgeladen.</span><span class="en">Your reputation per organisation and your play sessions. Both read your game logs on your computer only; nothing is uploaded.</span></p>
+  <div class="ck-subtabs" role="tablist" aria-label="Pilot">
+    <button type="button" role="tab" data-t="rep"><span class="de">Ruf</span><span class="en">Reputation</span></button>
+    <button type="button" role="tab" data-t="sessions"><span class="de">Sitzungen</span><span class="en">Sessions</span></button></div>`;
+// Stand-in for the cargo ledger of the trade planner page: its places, and "open this place" as a jump to Cargo.
+const LB={places:/*PLACES*/[], openLoc(loc){Cockpit.intent={loc}; Cockpit.go('fracht');}};
+function boot(){
+/*SZ_JS*/
+/*RF_JS*/
+return {SZ,RF};
+}
+function show(t){tab=t==='sessions'?'sessions':'rep';
+  node.querySelector('#view-rep').classList.toggle('hide',tab!=='rep'); node.querySelector('#view-sessions').classList.toggle('hide',tab!=='sessions');
+  node.querySelectorAll('.ck-subtabs [data-t]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.t===tab)));
+  if(tab==='rep') X.RF.render(); else X.SZ.render(); summary();}
+// Short reputation state for the status board of the overview (aligned organisations with rank and estimate).
+// Written a moment after every interaction, because reading the logs changes the estimate later.
+function summary(){clearTimeout(sumTimer); sumTimer=setTimeout(()=>{try{const d=X.RF.handyData(); if(d&&d.o) localStorage.setItem('sc_cockpit_ruf',JSON.stringify(d));}catch(e){}},800);}
+function start(el){
+  const st=document.createElement('style'); st.textContent=/*CSS*/''; document.head.appendChild(st);
+  node=document.createElement('div'); node.className='ck-pilot'; node.innerHTML=HEAD+/*HTML*/'';
+  el.replaceChildren(node);
+  // "To the phone" needs the phone module of the trade planner page.
+  const h=node.querySelector('#rf-handy'); if(h) h.hidden=true;
+  X=boot();
+  node.querySelector('.ck-subtabs').addEventListener('click',e=>{const b=e.target.closest('[data-t]'); if(b) show(b.dataset.t);});
+  node.addEventListener('click',summary); node.addEventListener('change',summary);
+}
+Cockpit.register('pilot',{render(el){if(!node) start(el); else if(node.parentNode!==el) el.replaceChildren(node);
+  const it=Cockpit.intent; if(it&&it.tab){tab=it.tab; Cockpit.intent=null;}
+  show(tab);}});
+})();
+"""
+
+
+def pilot_script(html: str, css: str, sz_js: str, rf_js: str, places: list) -> str:
+    """Return the pilot area script with the reputation and sessions tabs built in.
+
+    Args:
+        html: Markup of both panels (``SZ_HTML`` + ``RF_HTML`` of the Handels-Planer).
+        css: Their styles.
+        sz_js: Script of the sessions tab (``SZ_JS``).
+        rf_js: Script of the reputation tab with its table already inserted (``RF_JS``).
+        places: Places of the cargo ledger, for naming the last place of a session.
+
+    Returns:
+        JavaScript source of ``bereiche/pilot.js``.
+
+    Raises:
+        ValueError: If a mark of the template is missing.
+    """
+    js = PILOT_JS
+    for mark, value in [("/*CSS*/''", json.dumps(css, ensure_ascii=False)), ("/*HTML*/''", json.dumps(html, ensure_ascii=False)),
+                        ("/*PLACES*/[]", json.dumps(places, ensure_ascii=False, separators=(",", ":"))),
+                        ("/*SZ_JS*/", sz_js), ("/*RF_JS*/", rf_js)]:
+        if js.count(mark) != 1:
+            raise ValueError(f"Marke {mark} fehlt in der Pilot-Vorlage")
         js = js.replace(mark, value)
     return js.strip() + "\n"
 

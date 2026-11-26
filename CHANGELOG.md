@@ -2,6 +2,17 @@
 
 Alle nennenswerten Änderungen an diesem Projekt. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.0.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.5.0] – 2026-11-26
+
+### Hinzugefügt
+- **Pilot ist eingezogen.** Der Bereich „Pilot“ enthält jetzt die Reiter **Ruf** und **Sitzungen** aus dem Handels-Planer: Ruf je Organisation als Balken zum nächsten Rang (Abgleich mit dem mobiGlas, auch per Screenshot), und die Spielsitzungen mit Shard, Ort, Schiff und Absturz. Abgleiche und der gemerkte Log-Ordner von dort sind online schon da. Beide lesen die Spiel-Logs nur auf deinem Rechner.
+- **Ruf im Lagebild.** Die Übersicht zeigt die abgeglichenen Organisationen mit Rang und geschätztem Fortschritt zum nächsten Rang: Favoriten zuerst, dann wer dem Aufstieg am nächsten ist. Der Stand ist der, den der Bereich Pilot zuletzt gesehen hat.
+- Der letzte Ort einer Sitzung führt mit einem Klick zum Ort im Fracht-Logbuch. „Zu den Sitzungen“ im Lagebild öffnet gleich den Reiter Sitzungen.
+
+### Bekannt
+- „Aufs Handy“ für den Ruf gibt es vorerst nur im Handels-Planer.
+- Der Ruf im Lagebild ändert sich erst, wenn du den Bereich Pilot öffnest; die Übersicht liest die Logs nicht selbst.
+
 ## [0.4.0] – 2026-11-26
 
 ### Hinzugefügt
