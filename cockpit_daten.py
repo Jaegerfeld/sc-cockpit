@@ -34,9 +34,10 @@ DATEN_VERSION = "1"
 DATEN_JS = r"""
 /* ===== Shared cockpit data (cockpit_daten.py) ===== */
 window.SCData=(function(){
-  // Reminders: {v:1, items:[{id, art:'frei'|'auto', text, done, t, td, src, key, loc, ship, n, price}], saved}.
+  // Reminders: {v:1, items:[{id, art:'frei'|'auto', text, done, t, td, src, key, loc, shop, ship, n, price}], saved}.
   // src = area that owns an automatic reminder (e.g. 'kp'), key = its identity inside that area,
-  // loc = place ('p:<id>' as in the cargo ledger), ship = fleet id, n = count, price = aUEC each.
+  // loc = place ('p:<id>' as in the cargo ledger), shop = shop name as text (UEX terminal, until places are
+  // matched), ship = fleet id, n = count, price = aUEC each.
   // Blocked storage: reads give an empty list, writes do nothing.
   const KEY='sc_merker_v1', LEDGER='scha_ledger_v1';
   function read(){try{const o=JSON.parse(localStorage.getItem(KEY)||'null');
@@ -77,10 +78,13 @@ window.SCData=(function(){
       if(m.done){want.delete(m.key); continue;}
       const w=want.get(m.key);
       if(!w){o.items=o.items.filter(x=>x!==m); ch=true; continue;}
-      for(const k of ['text','loc','ship','n','price']) if(w[k]!==undefined&&m[k]!==w[k]){m[k]=w[k]; ch=true;}
+      for(const k of ['text','loc','shop','ship','n','price']){
+        if(w[k]!==undefined&&m[k]!==w[k]){m[k]=w[k]; ch=true;}
+        // A shop or price the source no longer names (part not buyable any more) must not linger.
+        else if(w[k]===undefined&&(k==='shop'||k==='price')&&m[k]!==undefined){delete m[k]; ch=true;}}
       want.delete(m.key);}
     for(const w of want.values()){o.items.push({id:newId(),art:'auto',src,key:String(w.key),text:String(w.text).slice(0,200),done:false,t:now(),
-      ...(w.loc!==undefined?{loc:w.loc}:{}),...((w.ship??ship)!=null?{ship:w.ship??ship}:{}),...(w.n!==undefined?{n:w.n}:{}),...(w.price!==undefined?{price:w.price}:{})}); ch=true;}
+      ...(w.loc!==undefined?{loc:w.loc}:{}),...(w.shop!==undefined?{shop:w.shop}:{}),...((w.ship??ship)!=null?{ship:w.ship??ship}:{}),...(w.n!==undefined?{n:w.n}:{}),...(w.price!==undefined?{price:w.price}:{})}); ch=true;}
     if(ch) write(o); return ch;}
   const items=()=>read().items;
   const open=()=>items().filter(m=>!m.done);
@@ -94,6 +98,8 @@ window.SCData=(function(){
     return {ships:fleet.length, cargoShips:(l&&Array.isArray(l.ships))?l.ships.length:0,
       scu:stock.reduce((a,p)=>a+(+p.z||0)*(+p.n||0),0), posts:stock.length, places:new Set(stock.map(p=>p.l)).size,
       notes:notes.length, open:all.filter(m=>!m.done).length, done:all.filter(m=>m.done).length, hasLedger:!!l};}
-  return {KEY,items,open,add,toggle,remove,restore,clearDone,syncAuto,summary,onChange};
+  // Tell the listeners about a change made in this page outside this module (e.g. the fleet).
+  const touch=fire;
+  return {KEY,items,open,add,toggle,remove,restore,clearDone,syncAuto,summary,onChange,touch};
 })();
 """

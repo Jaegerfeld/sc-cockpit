@@ -13,9 +13,14 @@
 #   Die Startdatei läuft per Doppelklick, solange „bereiche“ daneben liegt.
 #   Mit --zip entsteht zusätzlich SC_Cockpit_Offline.zip (für GitHub Pages).
 #
-#   Der Bau braucht kein Netz und nur die Standardbibliothek. Daten von UEX
-#   oder dem Wiki holt das Cockpit in dieser Ausbaustufe nicht; das kommt mit
-#   den Bereichen, die einziehen.
+#   Der Bereich Flotte enthält den Komponenten-Planer. Dessen Quelle liegt im
+#   Repo StarCitizen-Schiffskauf-Planer und bleibt dort, damit neue Schiffe nur
+#   an einer Stelle gepflegt werden. Der Bau sucht dieses Repo in der Umgebungs-
+#   variable SC_SCHIFFSKAUF, sonst im Ordner _schiffskauf (so legt es der
+#   Workflow ab), sonst neben diesem Repo. Er holt die Spieldaten wie der
+#   Schiffskauf-Planer vom Star Citizen Wiki und die Schiffsliste von UEX; mit
+#   --cache nimmt er dessen lokale Zwischenspeicher. Klappt das nicht, baut er
+#   die Flotte als Wegweiser und meldet es, statt abzubrechen.
 #
 #   kopfzeile.py kennt das Cockpit noch nicht (die Datei liegt byte-gleich in
 #   den fünf Tool-Repos). Deshalb setzt der Bau den Changelog-Link des
@@ -24,8 +29,11 @@
 """Build the SC Cockpit: start page plus one lazily loaded script per area."""
 from __future__ import annotations
 
+import importlib
 import json
+import os
 import sys
+import urllib.request
 import zipfile
 from pathlib import Path
 
@@ -43,6 +51,8 @@ OUT = HERE / "cockpit"
 #: Name of the start file inside the output folder (GitHub Pages serves a copy as index.html).
 START = "SC_Cockpit.html"
 REPO = "https://github.com/Jaegerfeld/sc-cockpit"
+#: UEX vehicle list; gives the fleet its model ids (same source as the Schiffskauf-Planer).
+UEX_VEHICLES = "https://api.uexcorp.space/2.0/vehicles"
 
 
 def nav_html() -> str:
@@ -75,7 +85,8 @@ def page() -> str:
         ("<!--CK_NAV-->", nav_html()), ("<!--CK_SETTINGS-->", settings),
         ("<!--CK_OFFLINE-->", kz.bi("Offline-Paket", "Offline package")),
         ("<!--CK_MERKER-->", kz.bi("Merker", "Reminders")), ("<!--CK_MNEW-->", kz.bi("Neuer Merker", "New reminder")),
-        ("<!--CK_MADD-->", kz.bi("Hinzufügen", "Add")), ("<!--FH_DIALOG-->", dialog), ("/*CK_JS*/", js),
+        ("<!--CK_MADD-->", kz.bi("Hinzufügen", "Add")), ("<!--CK_MSHIP-->", kz.bi("Schiff (optional)", "Ship (optional)")),
+        ("<!--CK_SETSUM-->", "⚙ " + kz.bi("Einstellungen", "Settings")), ("<!--FH_DIALOG-->", dialog), ("/*CK_JS*/", js),
     ]:
         if html.count(mark) != 1:
             raise ValueError(f"Platzhalter {mark} fehlt oder ist doppelt")
@@ -83,11 +94,58 @@ def page() -> str:
     return html
 
 
-def build(make_zip: bool = False) -> list[Path]:
+def schiffskauf_dir() -> Path | None:
+    """Find the StarCitizen-Schiffskauf-Planer sources (see the header for the search order)."""
+    for c in (os.environ.get("SC_SCHIFFSKAUF"), HERE / "_schiffskauf", HERE.parent / "StarCitizen-Schiffskauf-Planer"):
+        if c and (Path(c) / "komponenten_seite.py").exists():
+            return Path(c)
+    return None
+
+
+def flotte_js(use_cache: bool) -> str:
+    """Build the fleet area script with the component planner from the Schiffskauf-Planer sources.
+
+    Args:
+        use_cache: Use that repo's local caches instead of calling the Wiki API and UEX.
+
+    Returns:
+        JavaScript source of ``bereiche/flotte.js``.
+
+    Raises:
+        OSError, ValueError, KeyError, ImportError: If the sources or the data are unavailable.
+    """
+    src = schiffskauf_dir()
+    if not src:
+        raise ImportError("Quelle StarCitizen-Schiffskauf-Planer nicht gefunden")
+    # Appended, so this repo's own kopfzeile/sc_design/flotte/version keep winning.
+    if str(src) not in sys.path:
+        sys.path.append(str(src))
+    kp = importlib.import_module("komponenten")
+    seite = importlib.import_module("komponenten_seite")
+    data = kp.build(use_cache=use_cache)
+    if use_cache:
+        vehicles = json.loads((src / "uex_cache.json").read_text(encoding="utf-8"))["vehicles"]
+    else:
+        req = urllib.request.Request(UEX_VEHICLES, headers={"User-Agent": "Mozilla/5.0 sc-cockpit"})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            body = json.loads(r.read().decode("utf-8"))
+        if body.get("status") != "ok":
+            raise ValueError(f"UEX vehicles: status {body.get('status')}")
+        vehicles = body["data"]
+    missing = kp.attach_uex(data, vehicles)
+    if missing:
+        print(f"  Hinweis: ohne UEX-Zuordnung (nicht in die Flotte aufnehmbar): {', '.join(missing)}")
+    payload = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+    print(f"  Flotte: {len(data['ships'])} Schiffe, Spielstand {data.get('patch') or '?'}.")
+    return cb.flotte_script(seite.KP_HTML, seite.KP_CSS, seite.KP_JS.replace("/*__KP__*/null", payload))
+
+
+def build(make_zip: bool = False, use_cache: bool = False) -> list[Path]:
     """Write the start page and the area scripts; optionally the offline zip.
 
     Args:
         make_zip: Also write ``SC_Cockpit_Offline.zip`` next to the output folder.
+        use_cache: Build the fleet area from the local caches of the Schiffskauf-Planer.
 
     Returns:
         The files written.
@@ -96,6 +154,10 @@ def build(make_zip: bool = False) -> list[Path]:
         ValueError: If a sidebar area has no script, a script has no area, or a template mark is wrong.
     """
     scripts = cb.scripts()
+    try:
+        scripts["flotte"] = flotte_js(use_cache)
+    except (OSError, ValueError, KeyError, ImportError) as e:
+        print(f"  WARNUNG: Komponenten-Planer nicht gebaut ({e}); die Flotte bleibt ein Wegweiser.", file=sys.stderr)
     keys = [k for k, *_ in cs.AREAS]
     if sorted(scripts) != sorted(keys):
         raise ValueError(f"Bereiche und Seitenleiste passen nicht zusammen: {sorted(scripts)} / {sorted(keys)}")
@@ -122,13 +184,13 @@ def main(argv: list[str]) -> int:
     """Build the cockpit and print what was written.
 
     Args:
-        argv: Command-line arguments (``--zip``).
+        argv: Command-line arguments (``--zip``, ``--cache``).
 
     Returns:
         Exit code: 0 on success, 1 if the build is inconsistent.
     """
     try:
-        files = build("--zip" in argv)
+        files = build("--zip" in argv, "--cache" in argv)
     except ValueError as e:
         print(f"FEHLER: {e}", file=sys.stderr)
         return 1

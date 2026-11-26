@@ -4,10 +4,10 @@ Cockpit.register('uebersicht',{render(el){const C=Cockpit, T=C.T, s=SCData.summa
   const first=!s.ships&&!s.hasLedger&&!s.open&&!s.done;
   el.innerHTML=`<h1>${T('Übersicht','Overview')}</h1>
     <p class="ck-lede">${T('Das Cockpit führt deine Star-Citizen-Werkzeuge zusammen. Die Bereiche ziehen nach und nach ein; bis dahin führt jeder Bereich in das bisherige Tool.','The cockpit brings your Star Citizen tools together. The areas move in one by one; until then every area leads to the existing tool.')}</p>
-    ${first?`<p class="ck-note">${T('Hier steht noch nichts von dir. Leg rechts einen ersten Merker an, oder öffne unter „Flotte“ den Schiffskauf-Planer und füg dort deine Schiffe hinzu. Online teilt das Cockpit die Daten mit den bisherigen Tools.','Nothing of yours is here yet. Add a first reminder on the right, or open the ship purchase planner under “Fleet” and add your ships there. Online the cockpit shares its data with the existing tools.')}</p><br>`:''}
+    ${first?`<p class="ck-note">${T('Hier steht noch nichts von dir. Leg rechts einen ersten Merker an, oder wähl unter „Flotte“ deine Schiffe. Online teilt das Cockpit die Daten mit den bisherigen Tools.','Nothing of yours is here yet. Add a first reminder on the right, or pick your ships under “Fleet”. Online the cockpit shares its data with the existing tools.')}</p><br>`:''}
     <div class="ck-tiles">
     ${tile('flotte',T('Flotte','Fleet'),T('Meine Schiffe, Komponenten, Schiffskauf','My ships, components, ship purchase'),
-      s.ships?C.fact(s.ships,s.ships===1?'Schiff':'Schiffe',s.ships===1?'ship':'ships'):T('Noch kein Schiff angelegt','No ship added yet'))}
+      s.ships?C.fact(s.ships,s.ships===1?'Schiff':'Schiffe',s.ships===1?'ship':'ships'):T('Noch kein Schiff – unter „Schiffe …“ wählen','No ship yet – pick one under “Ships …”'))}
     ${tile('fracht',T('Fracht','Cargo'),T('Logbuch mit Notizen, Routen, Waren, Screenshot-Auswerter','Ledger with notes, routes, commodities, screenshot reader'),
       s.posts?`${C.fact(s.scu,'SCU','SCU')} ${T('an','at')} ${C.nf(s.places)} ${T(s.places===1?'Ort':'Orten','place'+(s.places===1?'':'s'))}${s.notes?` · ${C.nf(s.notes)} ${T(s.notes===1?'Notiz':'Notizen','note'+(s.notes===1?'':'s'))}`:''}`
        :s.notes?C.fact(s.notes,s.notes===1?'Notiz':'Notizen',s.notes===1?'note':'notes'):T('Keine Fracht im Logbuch','No cargo in the ledger'))}

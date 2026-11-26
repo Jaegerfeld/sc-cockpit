@@ -1,9 +1,16 @@
 name: Build & Deploy
 
-# Baut das Cockpit und veröffentlicht es auf GitHub Pages: bei Push auf main
-# und manuell. Der Bau braucht kein Netz. Neben der Seite liegt das
-# Offline-Paket SC_Cockpit_Offline.zip (Startdatei plus Ordner bereiche/).
+# Baut das Cockpit und veröffentlicht es auf GitHub Pages: täglich per Zeitplan
+# (frische Spieldaten und Preise für den Komponenten-Planer), bei Push auf main
+# und manuell. Neben der Seite liegt das Offline-Paket SC_Cockpit_Offline.zip
+# (Startdatei plus Ordner bereiche/).
+#
+# Die Quelle des Komponenten-Planers liegt im Repo StarCitizen-Schiffskauf-Planer
+# und wird hier nach _schiffskauf ausgecheckt. Ist das Wiki oder UEX nicht
+# erreichbar, baut cockpit_bauen.py die Flotte als Wegweiser und läuft weiter.
 on:
+  schedule:
+    - cron: "20 5 * * *"   # täglich 05:20 UTC, nach dem Schiffskauf-Planer
   push:
     branches: [main]
   workflow_dispatch:
@@ -22,6 +29,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: Jaegerfeld/StarCitizen-Schiffskauf-Planer
+          path: _schiffskauf
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"

@@ -6,25 +6,37 @@ The cockpit brings the Star Citizen tools together in one app. It is under const
 
 - **Sidebar on the left:** switches between **Overview**, **Fleet**, **Cargo**, **Workshop**, **Guides** and **Pilot**. On narrow screens it is a row at the top.
 - **Overview:** shows one tile per area with the state from your data, for example the number of your ships or the SCU in the cargo ledger.
-- **Areas:** as long as an area has not moved in, its page shows what the cockpit already knows and leads to the existing tool with **Open** (new tab).
+- **Fleet:** your ships and the component planner. Here you swap parts and take the shopping list over as reminders.
+- **Other areas:** as long as an area has not moved in, its page shows what the cockpit already knows and leads to the existing tool with **Open** (new tab).
 - **Reminders on the right:** your list to tick off. It stays visible in every area.
-- **Bottom of the sidebar:** language, light/dark, this manual, "What's new?" and the offline package.
+- **Bottom of the sidebar:** language, light/dark, this manual, "What's new?" and the offline package. On phones and tablets they sit under **Settings**.
 
 All data stays in your browser. There is no account and no server.
 
 ## Reminders
 
-1. Under **New reminder** on the right, write what you want to get done in the game, for example "fetch the Hull B at Area18", and click **Add** (or press Enter).
+1. Under **New reminder** on the right, write what you want to get done in the game, for example "fetch the Hull B at Area18", and click **Add** (or press Enter). If your fleet has ships, you can pick a **ship** for it below.
 2. When something is done, tick it. The reminder moves to **Done**; there you can untick it again.
 3. **✕** removes one of your own reminders. Right after that the message at the bottom offers **Undo**.
 4. **Remove done ones** deletes all ticked reminders at once. It asks first and cannot be undone.
 
-Later the areas add reminders themselves, first the component planner from its shopping list.
+Reminders marked "automatic" come from the shopping list of a ship (see "Fleet and components"). They have no ✕: they disappear when the part drops out of the shopping list, or you tick them.
+
+## Fleet and components
+
+1. Open **Fleet** and click **Ships …** (the first time **Choose ships**). **View** opens a ship for a try, **+ Fleet** adds it to your fleet.
+2. Click a card, for example a cooler, and pick another part on the right. The **shopping list** at the bottom fills with shop and price.
+3. Below the shopping list, click **Take the shopping list over as reminders**. On the right one reminder per part appears, with count, ship, cheapest shop and price.
+4. If you change the loadout afterwards, the open reminders follow by themselves. Ticked reminders stay, even if you remove the part again.
+5. **Stop keeping reminders** ends this for the ship and takes its open reminders off the list.
+
+Reminders are kept for ships of your fleet only. Add a ship in preview with **+ add to my ships** first.
 
 ## Shared data
 
 - Online the cockpit and the existing tools share one address. That is why the cockpit sees your fleet and the cargo ledger of the trade planner without any transfer.
 - For now the cockpit only reads the cargo ledger. You keep cargo and notes in the trade planner.
+- Online the cockpit shares fleet and loadouts with the ship purchase planner: what you built there is here, and the other way round.
 - Reminders, language and light/dark are stored by the cockpit itself.
 - If you clear your browser's site data, this data is gone as well.
 

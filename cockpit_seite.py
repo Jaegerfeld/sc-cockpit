@@ -63,10 +63,11 @@ TEMPLATE = r"""<!DOCTYPE html>
   <aside class="ck-side">
     <div class="ck-brand"><b>SC Cockpit</b> <span class="ck-ver" title="Version">v<!--CK_VERSION--></span></div>
     <nav class="ck-nav" id="ck-nav" aria-label="Bereiche / Areas"><!--CK_NAV--></nav>
+    <details class="ck-setd" id="ck-setd" open><summary><!--CK_SETSUM--></summary>
     <div class="fh ck-set">
       <!--CK_SETTINGS-->
       <a class="btn fh-btn" id="ck-offline" href="https://jaegerfeld.github.io/sc-cockpit/SC_Cockpit_Offline.zip">⬇ <!--CK_OFFLINE--></a>
-    </div>
+    </div></details>
   </aside>
   <main class="ck-main" id="ck-main" aria-live="polite"></main>
   <aside class="ck-rail" id="ck-rail" aria-labelledby="ck-mh">
@@ -74,6 +75,7 @@ TEMPLATE = r"""<!DOCTYPE html>
     <form id="ck-madd" autocomplete="off">
       <label for="ck-mtext"><!--CK_MNEW--></label>
       <div class="ck-row"><input type="text" id="ck-mtext" maxlength="200"><button class="btn pri" type="submit"><!--CK_MADD--></button></div>
+      <div class="ck-mshipw" id="ck-mshipw" hidden><label for="ck-mship"><!--CK_MSHIP--></label><select id="ck-mship"></select></div>
     </form>
     <div id="ck-mlist"></div>
   </aside>
@@ -91,6 +93,8 @@ TEMPLATE = r"""<!DOCTYPE html>
 CSS = r"""
 /* ===== Cockpit shell (cockpit_seite.py) ===== */
 *{box-sizing:border-box}
+/* Bilingual text of moved-in tools (their markup uses .de / .en). */
+:root[data-lang="de"] .en,:root[data-lang="en"] .de{display:none!important}
 .ck{display:grid;grid-template-columns:220px minmax(0,1fr) 300px;gap:0;min-height:calc(100vh - 5px);align-items:start}
 .ck-side{position:sticky;top:0;height:calc(100vh - 5px);display:flex;flex-direction:column;gap:14px;padding:16px 12px;border-right:1px solid var(--line);background:var(--panel);overflow:auto}
 .ck-brand{font-family:var(--disp);font-size:22px;font-weight:700;letter-spacing:.02em;padding:0 8px}
@@ -102,7 +106,8 @@ CSS = r"""
 .ck-nav a[aria-current="page"]{border-color:var(--line);border-left-color:var(--accent);background:var(--panel2);color:var(--accent);font-weight:700}
 .ck-nav .ck-ico{width:24px;text-align:center}
 .ck-nav .ck-tomerker{display:none}
-.ck-set{margin-top:auto;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.ck-setd{margin-top:auto} .ck-setd>summary{display:none}
+.ck-set{padding:0;display:flex;flex-wrap:wrap;gap:8px}
 .ck-set .fh-btn{flex:1 1 100%;text-align:left}
 .ck-main{padding:22px 26px 60px;min-width:0}
 .ck-main h1{font-family:var(--disp);font-size:30px;line-height:1.15;margin:0 0 6px}
@@ -117,6 +122,7 @@ CSS = r"""
 .ck-row{display:flex;gap:6px}
 .ck-row input{flex:1 1 auto;min-width:0;min-height:40px}
 .ck-row .btn{min-height:40px;white-space:nowrap}
+.ck-mshipw{margin-top:8px} .ck-mshipw select{width:100%;min-height:40px}
 .ck-ml{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
 .ck-ml li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 6px;align-items:start;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:4px 4px 4px 8px}
 .ck-ml label{display:flex;gap:8px;align-items:flex-start;min-height:36px;padding:7px 0;cursor:pointer;overflow-wrap:anywhere}
@@ -147,7 +153,7 @@ a.ck-tile:hover{border-color:var(--accent)}
 .ck-tool p{margin:0;color:var(--muted);font-size:14px;flex:1}
 .ck-tool .btn{align-self:flex-start;min-height:44px;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
 .ck-note{color:var(--muted);font-size:14px;max-width:75ch;margin:18px 0 0;border-left:3px solid var(--accent2);padding-left:12px}
-@media (max-width:1180px){.ck{grid-template-columns:200px minmax(0,1fr) 260px}.ck-main{padding:18px 18px 50px}}
+@media (max-width:1560px){.ck{grid-template-columns:200px minmax(0,1fr) 260px}.ck-main{padding:18px 18px 50px}}
 @media (max-width:919px){
   .ck{grid-template-columns:minmax(0,1fr);min-height:0;align-content:start}
   .ck-side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:12px;gap:10px}
@@ -155,7 +161,9 @@ a.ck-tile:hover{border-color:var(--accent)}
   .ck-nav a{flex:none;border-left-width:1px;border-bottom:4px solid transparent;padding:0 12px;font-size:16px}
   .ck-nav a[aria-current="page"]{border-left-color:var(--line);border-bottom-color:var(--accent)}
   .ck-nav .ck-tomerker{display:flex}
-  .ck-set{margin-top:0} .ck-set .fh-btn{flex:0 1 auto}
+  /* Phone and tablet: settings fold away so the content comes first. */
+  .ck-setd{margin-top:0} .ck-setd>summary{display:inline-flex;align-items:center;gap:6px;min-height:44px;cursor:pointer;color:var(--muted);font-family:var(--disp);font-weight:600}
+  .ck-set{margin-top:6px} .ck-set .fh-btn{flex:0 1 auto}
   .ck-main{padding:16px 14px 30px}
   .ck-rail{position:static;height:auto;border-left:0;border-top:1px solid var(--line);padding-bottom:60px}
 }
@@ -193,7 +201,8 @@ function load(key){if(REG[key]) return Promise.resolve();
     s.onload=()=>REG[key]?ok():bad(); s.onerror=bad; document.head.appendChild(s);});
   return PEND[key];}
 const area=key=>AREAS.find(a=>a.key===key);
-const keyFromHash=()=>{const k=(location.hash.match(/^#\/([a-z]+)/)||[])[1]; return area(k)?k:AREAS[0].key;};
+// "#/<area>" picks an area; a loadout link of the component planner ("#kp=…") belongs to the fleet.
+const keyFromHash=()=>{if(/^#kp=/.test(location.hash)) return 'flotte'; const k=(location.hash.match(/^#\/([a-z]+)/)||[])[1]; return area(k)?k:AREAS[0].key;};
 // Show an area: mark it in the navigation, load it if needed, draw it. focus = move focus to its heading.
 async function show(key,focus){cur=key; const a=area(key), main=$('ck-main');
   document.querySelectorAll('#ck-nav a[data-key]').forEach(l=>{if(l.dataset.key===key) l.setAttribute('aria-current','page'); else l.removeAttribute('aria-current');});
@@ -235,6 +244,7 @@ function toast(text,undo){const t=$('ck-toast'); clearTimeout(toastTimer);
 function meta(m){const out=[];
   if(m.ship!=null&&window.SCFleet){const f=SCFleet.read().ships.find(s=>s.id===m.ship); if(f) out.push('🚀 '+esc(f.name||f.model));}
   if(m.loc) out.push('📍 '+esc(String(m.loc).replace(/^p:/,'').split('|').pop()));
+  else if(m.shop) out.push('📍 '+esc(m.shop));
   if(m.price) out.push(`${nf(m.price*(m.n||1))} aUEC`);
   if(m.art==='auto') out.push(T('automatisch','automatic'));
   return out.join(' · ');}
@@ -244,13 +254,18 @@ function itemHtml(m){const mt=meta(m);
     ${mt?`<small>${mt}</small>`:''}</li>`;}
 function drawRail(){const all=SCData.items(), open=all.filter(m=>!m.done), done=all.filter(m=>m.done), was=$('ck-mdone')?.open;
   $('ck-mn').textContent=open.length?`(${open.length} ${T('offen','open')})`:'';
+  // Optional ship for a new reminder, offered once the fleet has ships.
+  const fleet=window.SCFleet?SCFleet.read().ships:[], sel=$('ck-mship'), was2=sel.value;
+  $('ck-mshipw').hidden=!fleet.length;
+  sel.innerHTML=`<option value="">${T('ohne Schiff','no ship')}</option>`+fleet.map(f=>`<option value="${esc(f.id)}"${f.id===was2?' selected':''}>${esc(f.name||f.model)}</option>`).join('');
   document.querySelectorAll('.ck-tomerker .ck-n').forEach(n=>{n.textContent=open.length?`(${open.length})`:'';});
   $('ck-mlist').innerHTML=(open.length?`<ul class="ck-ml">${open.map(itemHtml).join('')}</ul>`
      :`<p class="ck-mempty">${all.length?T('Alles erledigt.','All done.'):T('Noch keine Merker. Schreib oben auf, was du im Spiel erledigen willst, zum Beispiel einen Einkauf an einer Station.','No reminders yet. Write down above what you want to get done in the game, for example a purchase at a station.')}</p>`)
     +(done.length?`<details class="ck-mdone" id="ck-mdone"${was?' open':''}><summary>${T('Erledigt','Done')} (${done.length})</summary><ul class="ck-ml">${done.map(itemHtml).join('')}</ul>
        <button type="button" class="btn" id="ck-mclear">${T('Erledigte entfernen','Remove done ones')}</button></details>`:'');}
 $('ck-madd').addEventListener('submit',e=>{e.preventDefault(); const i=$('ck-mtext');
-  if(!SCData.add(i.value)){i.focus(); return;} i.value=''; i.focus(); toast(T('Merker angelegt.','Reminder added.'));});
+  const ship=$('ck-mship').value;
+  if(!SCData.add(i.value,ship?{ship}:null)){i.focus(); return;} i.value=''; i.focus(); toast(T('Merker angelegt.','Reminder added.'));});
 $('ck-mlist').addEventListener('change',e=>{const c=e.target.closest('input[data-id]'); if(!c) return;
   SCData.toggle(c.dataset.id,c.checked);
   // The row moved to the other list; keep the keyboard user near where they were.
@@ -265,6 +280,10 @@ $('ck-mlist').addEventListener('click',e=>{const d=e.target.closest('[data-del]'
 function redraw(){$('ck-mtext').placeholder=T('z. B. Hull B bei Area18 abholen','e.g. fetch the Hull B at Area18');
   const a=area(cur); if(a) document.title=`${T(a.de,a.en)} · SC Cockpit`; draw(); drawRail();}
 SCData.onChange(()=>{draw(); drawRail();});
+// Fleet changes made in this page (component planner) do not raise a storage event; pass them on.
+if(window.SCFleet) for(const k of ['upsert','upsertMany','remove']){const f=SCFleet[k]; SCFleet[k]=(...a)=>{const r=f(...a); SCData.touch(); return r;};}
+// Narrow screens start with the settings folded.
+if(matchMedia('(max-width:919px)').matches) $('ck-setd').removeAttribute('open');
 
 /* ---------- start ---------- */
 redraw(); show(keyFromHash(),false);
