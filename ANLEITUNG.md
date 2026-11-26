@@ -10,7 +10,8 @@ Das Cockpit führt die Star-Citizen-Werkzeuge in einer App zusammen. Es ist im A
 - **Fracht:** das Fracht-Logbuch mit Notizen und den Merkern am Ort.
 - **Pilot:** dein Ruf je Organisation und deine Spielsitzungen.
 - **Werkstatt:** der Bauplan-Planer und der Wikelo-Planer.
-- **Übrige Bereiche:** Solange ein Bereich noch nicht eingezogen ist, zeigt seine Seite, was das Cockpit schon weiß, und führt mit **Öffnen** in das bisherige Tool (neuer Tab).
+- **Guides:** alle Feldhandbücher und Flyer; ein Guide öffnet sich direkt im Cockpit.
+- **Noch im bisherigen Tool:** Routen und Warenlisten, der Schiffskauf und der Screenshot-Auswerter. Am Fuß von „Fracht“ und „Flotte“ führt **Öffnen** dorthin (neuer Tab).
 - **Merker rechts:** deine Liste zum Abhaken. Sie bleibt in jedem Bereich sichtbar. **Einklappen »** macht sie zum schmalen Streifen, ein Klick darauf öffnet sie wieder.
 - **Unten in der Seitenleiste:** Sprache, Hell/Dunkel, diese Anleitung, „Was ist neu?“ und das Offline-Paket. Auf Handy und Tablet stehen sie unter **Einstellungen**.
 
@@ -70,6 +71,14 @@ Die ausführliche Anleitung zu Ruf und Sitzungen steht im Handels-Planer unter �
 3. **Wikelo:** Trag deinen Bestand ein; die Angebote sortieren sich danach, wie viel dir noch fehlt.
 4. Jeder Planer hat seine eigene Zeile mit **Anleitung + How-To** und **Was ist neu?**. Dort steht die ausführliche Anleitung des Planers.
 5. Sprache und Hell/Dunkel stellst du im Cockpit ein; beide Planer folgen.
+
+## Guides
+
+1. Öffne **Guides**. Die Karten sind nach Themen geordnet.
+2. Ein Klick auf einen Guide öffnet ihn hier. **← Alle Guides** führt zurück zur Übersicht, **In neuem Tab ↗** öffnet den Guide einzeln, zum Beispiel zum Ausdrucken.
+3. Flyer und PDFs öffnen in einem neuen Tab.
+
+Die Guides brauchen eine Internetverbindung, auch wenn du das Cockpit aus dem Offline-Paket startest.
 
 ## Gemeinsame Daten
 

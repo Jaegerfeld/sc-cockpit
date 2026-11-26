@@ -8,7 +8,7 @@ One app for my Star Citizen tools: fleet, cargo, workshop, guides and pilot, sha
 
 ## Status
 
-Under construction. State of version 0.6.0:
+State of version 0.7.0, all six areas have moved in:
 
 - **Sidebar** with the areas Overview, Fleet, Cargo, Workshop, Guides and Pilot. Each area is loaded on first use.
 - **Reminder rail** on the right, always visible: add your own reminders, tick them off, remove them.
@@ -17,9 +17,10 @@ Under construction. State of version 0.6.0:
 - **Cargo has moved in:** cargo ledger with notes; reminders appear at their place, purchase reminders at the place of their shop.
 - **Pilot has moved in:** reputation per organisation and play sessions from the game logs (read locally only); the reputation is on the status board as well.
 - **Workshop has moved in:** blueprint planner and Wikelo planner as sub-tabs, each in a shielded part of the page.
-- **Guides as a signpost:** the guides have not moved in yet; their pages lead to the existing tools.
+- **Guides have moved in:** index of all field handbooks and flyers; a guide opens inside the cockpit in a reader frame.
+- **Still a link:** routes and commodity lists, ship purchase and the screenshot reader (at the bottom of cargo and fleet).
 
-Planned order: guides, and one backup file for everything.
+Next: one backup file for everything; then routes, ship purchase and the screenshot reader.
 
 ## The existing tools
 

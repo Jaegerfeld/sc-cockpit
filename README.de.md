@@ -8,7 +8,7 @@ Eine App für meine Star-Citizen-Werkzeuge: Flotte, Fracht, Werkstatt, Guides un
 
 ## Stand
 
-Im Aufbau. Stand Version 0.6.0:
+Stand Version 0.7.0, alle sechs Bereiche sind eingezogen:
 
 - **Seitenleiste** mit den Bereichen Übersicht, Flotte, Fracht, Werkstatt, Guides und Pilot. Jeder Bereich wird beim ersten Öffnen geladen.
 - **Merker-Leiste** rechts, immer sichtbar: eigene Merker anlegen, abhaken, entfernen.
@@ -17,9 +17,10 @@ Im Aufbau. Stand Version 0.6.0:
 - **Fracht ist eingezogen:** Fracht-Logbuch mit Notizen; Merker erscheinen am Ort, Kaufmerker am Ort ihres Händlers.
 - **Pilot ist eingezogen:** Ruf je Organisation und Spielsitzungen aus den Spiel-Logs (nur lokal gelesen); der Ruf steht auch im Lagebild.
 - **Werkstatt ist eingezogen:** Bauplan-Planer und Wikelo-Planer als Unterreiter, jeder in einem abgeschirmten Bereich der Seite.
-- **Guides als Wegweiser:** Die Guides sind noch nicht eingezogen; ihre Seiten führen in die bisherigen Tools.
+- **Guides sind eingezogen:** Übersicht aller Feldhandbücher und Flyer; ein Guide öffnet sich im Cockpit in einem Leserahmen.
+- **Noch als Verweis:** Routen und Warenlisten, Schiffskauf und Screenshot-Auswerter (am Fuß von Fracht und Flotte).
 
-Geplante Reihenfolge: Guides, dazu eine Sicherungsdatei für alles.
+Als Nächstes: eine Sicherungsdatei für alles; danach Routen, Schiffskauf und Auswerter.
 
 ## Die bisherigen Tools
 

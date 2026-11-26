@@ -2,6 +2,18 @@
 
 Alle nennenswerten Änderungen an diesem Projekt. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.0.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.7.0] – 2026-11-26
+
+### Hinzugefügt
+- **Guides sind eingezogen.** Der Bereich „Guides“ zeigt die Übersicht aller Feldhandbücher und Flyer mit ihren Karten. Ein Klick auf einen Guide öffnet ihn im Cockpit in einem Leserahmen; „← Alle Guides“ führt zurück, „In neuem Tab ↗“ öffnet ihn einzeln. Flyer und PDFs öffnen in einem neuen Tab.
+- Die Übersicht folgt Sprache und Hell/Dunkel des Cockpits.
+- Damit sind alle sechs Bereiche eingezogen.
+
+### Bekannt
+- Die Guides selbst liegen auf der Guide-Seite und brauchen das Netz, auch im Offline-Paket. Ein geöffneter Guide behält seine eigene Sprach- und Farbwahl.
+- Der Abschnitt „Planer & Tools“ der Guide-Übersicht ist im Cockpit ausgeblendet; die Planer sind hier die Bereiche der Seitenleiste.
+- Noch nicht eingezogen sind Routen und Warenlisten des Handels-Planers, der Schiffskauf und der Screenshot-Auswerter. Sie stehen als Verweis am Fuß von „Fracht“ und „Flotte“.
+
 ## [0.6.0] – 2026-11-26
 
 ### Hinzugefügt

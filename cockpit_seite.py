@@ -156,6 +156,11 @@ body.ck-norail #ck-railbody{display:none}
 .ck-subtabs button{font-family:var(--disp);font-weight:700;font-size:16px;letter-spacing:.03em;background:transparent;color:var(--muted);border:0;border-bottom:3px solid transparent;padding:10px 16px;min-height:44px;cursor:pointer}
 .ck-subtabs button:hover{color:var(--ink)}
 .ck-subtabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+/* Reader of the guides area */
+.ck-readbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin:0 0 10px}
+.ck-readbar b{font-family:var(--disp);font-size:18px;flex:1 1 200px;min-width:0}
+.ck-readbar .btn{min-height:44px;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.ck-reader iframe{display:block;width:100%;height:calc(100vh - 210px);min-height:420px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
 /* Status board of the overview */
 .ck-board{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;align-items:start}
 .ck-panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;min-width:0}
