@@ -2,6 +2,17 @@
 
 Alle nennenswerten Änderungen an diesem Projekt. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.0.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.10.0] – 2026-11-26
+
+### Hinzugefügt
+- **„Aufs Handy“ im Cockpit.** Im Fracht-Logbuch und im Ruf gibt es jetzt den Knopf **Aufs Handy …** wie im Handels-Planer: Der Stand wird als Link und QR-Code gepackt; der Teil hinter „#“ wird nie an einen Server geschickt.
+- **Der Link führt ins Cockpit.** Auf dem Handy öffnet er das Cockpit direkt im passenden Bereich: das Logbuch unter „Fracht“, den Ruf unter „Pilot“. Das Logbuch fragt vor dem Ersetzen eines vorhandenen Stands nach; Rückgängig ist möglich.
+
+### Bekannt
+- Übertragen werden wie bisher Logbuch (Schiffe, Fracht, Notizen) und Ruf. Merker, Flotte und Bestückungen nimmst du mit der Sicherungsdatei mit.
+- Links aus dem Handels-Planer öffnen weiter den Handels-Planer, Links aus dem Cockpit das Cockpit.
+- Der QR-Code braucht eine Verbindung; ohne sie bleibt der Link zum Kopieren.
+
 ## [0.9.0] – 2026-11-26
 
 ### Hinzugefügt

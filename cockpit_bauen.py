@@ -68,6 +68,8 @@ OUT = HERE / "cockpit"
 #: Name of the start file inside the output folder (GitHub Pages serves a copy as index.html).
 START = "SC_Cockpit.html"
 REPO = "https://github.com/Jaegerfeld/sc-cockpit"
+#: Published address; a "to the phone" link made from a copy on disk points here.
+ONLINE = "https://jaegerfeld.github.io/sc-cockpit/"
 #: UEX vehicle list; gives the fleet its model ids (same source as the Schiffskauf-Planer).
 UEX_VEHICLES = "https://api.uexcorp.space/2.0/vehicles"
 
@@ -81,6 +83,30 @@ def nav_html() -> str:
             + kz.bi("Merker", "Reminders") + ' <span class="ck-n"></span></a>')
 
 
+def handy_parts() -> tuple[str, str, str]:
+    """Return markup, styles and script of "to the phone" from the Handels-Planer sources.
+
+    The transfer (state as a compressed link and QR code) is that tool's module ``handy_seite``. Here its
+    links point to the cockpit, and the cockpit itself takes an opened link over (the module's own
+    receiver, which knows the tabs of the trade planner page, is switched off).
+
+    Returns:
+        ``(html, css, js)``; three empty strings if the sources are not there or do not fit. The areas
+        then hide their "to the phone" buttons.
+    """
+    try:
+        handel_dir()
+        hy = importlib.import_module("handy_seite")
+        js = hy.HY_JS
+        for mark in ("__ONLINE__", "setTimeout(init,0);"):
+            if js.count(mark) != 1:
+                raise ValueError(f"Marke {mark} fehlt in handy_seite")
+        return hy.HY_HTML, hy.HY_CSS, js.replace("__ONLINE__", ONLINE).replace("setTimeout(init,0);", "")
+    except (ImportError, ValueError, AttributeError) as e:
+        print(f"  WARNUNG: „Aufs Handy“ nicht gebaut ({e}); die Knöpfe bleiben ausgeblendet.", file=sys.stderr)
+        return "", "", ""
+
+
 def page() -> str:
     """Assemble the start page from the template, the shared kits and the cockpit modules.
 
@@ -88,13 +114,14 @@ def page() -> str:
         The complete HTML of the start file.
     """
     areas = [{"key": k, "de": de, "en": en} for k, _ico, de, en in cs.AREAS]
-    js = (kz.JS + sd.JS + fl.FLOTTE_JS + cd.DATEN_JS + csi.SICHERUNG_JS
+    hy_html, hy_css, hy_js = handy_parts()
+    js = (kz.JS + sd.JS + fl.FLOTTE_JS + cd.DATEN_JS + csi.SICHERUNG_JS + hy_js
           + cs.JS.replace("/*CK_VER*/'0'", json.dumps(VERSION))
           .replace("/*CK_AREAS*/[]", json.dumps(areas, ensure_ascii=False)))
     # Screen-reader-only text and the bilingual spans of this page use the header kit's classes.
-    css = sd.CSS + kz.CSS + cs.CSS + "\n.ck-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}\n"
+    css = sd.CSS + kz.CSS + cs.CSS + hy_css + "\n.ck-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}\n"
     dialog = (kz.dialog_html("cockpit", VERSION).replace("https://github.com/Jaegerfeld/blob/", REPO + "/blob/")
-              + "\n" + kz.changelog_script(HERE / "CHANGELOG.md"))
+              + "\n" + kz.changelog_script(HERE / "CHANGELOG.md") + hy_html)
     settings = kz.lang_seg() + kz.theme_btn() + kz.manual_btn() + kz.news_btn()
     html = cs.TEMPLATE
     for mark, value in [
