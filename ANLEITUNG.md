@@ -7,8 +7,9 @@ Das Cockpit führt die Star-Citizen-Werkzeuge in einer App zusammen. Es ist im A
 - **Seitenleiste links:** wechselt zwischen **Übersicht**, **Flotte**, **Fracht**, **Werkstatt**, **Guides** und **Pilot**. Auf schmalen Bildschirmen steht sie als Zeile oben.
 - **Übersicht:** zeigt je Bereich eine Kachel mit dem Stand aus deinen Daten, zum Beispiel die Zahl deiner Schiffe oder die SCU im Fracht-Logbuch.
 - **Flotte:** deine Schiffe und der Komponenten-Planer. Hier tauschst du Teile und übernimmst die Einkaufsliste als Merker.
+- **Fracht:** das Fracht-Logbuch mit Notizen und den Merkern am Ort.
 - **Übrige Bereiche:** Solange ein Bereich noch nicht eingezogen ist, zeigt seine Seite, was das Cockpit schon weiß, und führt mit **Öffnen** in das bisherige Tool (neuer Tab).
-- **Merker rechts:** deine Liste zum Abhaken. Sie bleibt in jedem Bereich sichtbar.
+- **Merker rechts:** deine Liste zum Abhaken. Sie bleibt in jedem Bereich sichtbar. **Einklappen »** macht sie zum schmalen Streifen, ein Klick darauf öffnet sie wieder.
 - **Unten in der Seitenleiste:** Sprache, Hell/Dunkel, diese Anleitung, „Was ist neu?“ und das Offline-Paket. Auf Handy und Tablet stehen sie unter **Einstellungen**.
 
 Alle Daten liegen in deinem Browser. Es gibt kein Konto und keinen Server.
@@ -32,10 +33,20 @@ Merker mit dem Zusatz „automatisch“ kommen aus der Einkaufsliste eines Schif
 
 Merker gibt es nur für Schiffe deiner Flotte. Ein Schiff in der Vorschau fügst du zuerst mit **+ zu meinen Schiffen** hinzu.
 
+## Fracht und Merker am Ort
+
+1. Öffne **Fracht**. Links stehen deine Schiffe mit Laderaum, rechts die Orte, in der Mitte der gewählte Ort oder das gewählte Schiff.
+2. Wähl einen Ort. Unter **Hier zu erledigen** stehen die offenen Merker für diesen Ort, zum Beispiel ein Kaufmerker aus der Flotte mit Schiff, Händler und Preis. Setz den Haken, wenn es erledigt ist.
+3. Unter **Neuer Merker für diesen Ort** legst du einen eigenen Merker an, der an diesem Ort hängt. Bei einem Schiff heißt das Feld **Neuer Merker für dieses Schiff**.
+4. Orte und Schiffe mit offenen Merkern tragen in den Listen **☑ n Merker**. Der Filter **nur mit Fracht oder Notiz** zeigt sie mit an.
+5. Darunter steht wie gewohnt das Feld **Notizen** für freien Text.
+
+Fracht buchst du wie im Handels-Planer: **+ Fracht einbuchen**, Posten anklicken oder ziehen zum Verschieben. Routen, Warenlisten und „Aufs Handy“ sind noch im Handels-Planer.
+
 ## Gemeinsame Daten
 
 - Online liegen das Cockpit und die bisherigen Tools unter derselben Adresse. Deshalb sieht das Cockpit deine Flotte und das Fracht-Logbuch aus dem Handels-Planer, ohne dass du etwas übertragen musst.
-- Das Cockpit liest das Fracht-Logbuch zurzeit nur. Fracht und Notizen pflegst du weiter im Handels-Planer.
+- Das Fracht-Logbuch ist dasselbe wie im Handels-Planer. Was du hier buchst, steht dort, und umgekehrt. Ist es in zwei Tabs offen, übernimmt jeder den Stand des anderen, sobald der speichert.
 - Flotte und Bestückungen teilt das Cockpit online mit dem Schiffskauf-Planer: Was du dort gebaut hast, steht hier, und umgekehrt.
 - Merker, Sprache und Hell/Dunkel speichert das Cockpit selbst.
 - Löschst du die Website-Daten deines Browsers, sind auch diese Daten weg.
