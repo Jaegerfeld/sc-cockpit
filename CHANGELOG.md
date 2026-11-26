@@ -2,6 +2,19 @@
 
 Alle nennenswerten Änderungen an diesem Projekt. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.0.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.4.0] – 2026-11-26
+
+### Hinzugefügt
+- **Übersicht als Lagebild.** Die Startseite zeigt jetzt den Stand statt Kacheln:
+  - **Zu erledigen:** alle offenen Merker, nach Ort gruppiert, mit der Kaufsumme je Ort. Du hakst sie direkt ab. „Im Logbuch →“ öffnet den Ort im Fracht-Logbuch.
+  - **Flotte:** je Schiff, wie viele Teile getauscht sind, wie viel Fracht an Bord ist und wie viele Merker offen sind.
+  - **Fracht:** SCU gesamt, Zahl der Orte und Notizen, die fünf Orte und Schiffe mit der meisten Fracht.
+  - **Letzte Sitzung:** Zeitpunkt, Ende (auch Absturz), letzter Ort, letztes Schiff und Shard der zuletzt gelesenen Sitzung aus dem Reiter „Sitzungen“ des Handels-Planers.
+
+### Bekannt
+- Das Lagebild liest nur, was die Bereiche im Browser gespeichert haben. Warennamen und Lagerwert stehen deshalb nur im Logbuch selbst.
+- „Letzte Sitzung“ zeigt die zuletzt gelesene abgeschlossene Sitzung, nicht die laufende. Ort und Schiff erscheinen mit dem Namen aus dem Spiel-Log.
+
 ## [0.3.0] – 2026-11-26
 
 ### Hinzugefügt

@@ -149,6 +149,29 @@ body.ck-norail #ck-railbody{display:none}
 .ck-mdone .btn{margin-top:8px}
 .ck-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:900;display:flex;gap:12px;align-items:center;background:var(--panel);color:var(--ink);border:1px solid var(--accent);border-radius:10px;padding:8px 10px 8px 16px;box-shadow:var(--shadow);max-width:92vw}
 .ck-toast[hidden]{display:none}
+/* Status board of the overview */
+.ck-board{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;align-items:start}
+.ck-panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.ck-panel h2{font-family:var(--disp);font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0}
+/* "To do" is the main panel: full width, accent frame. */
+.ck-ptodo{grid-column:1/-1;border-color:var(--accent)}
+.ck-pempty{margin:0;color:var(--muted);font-size:14px}
+.ck-pmore{margin:0;color:var(--muted);font-size:12.5px}
+.ck-big{margin:0;font-family:var(--disp);font-size:26px;font-weight:700} .ck-big small{font-family:var(--body);font-size:13.5px;font-weight:400;color:var(--muted)}
+.ck-plist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.ck-plist li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 10px;padding:6px 0;border-top:1px solid var(--line);font-size:14.5px}
+.ck-plist li:first-child{border-top:0}
+.ck-plist b{overflow-wrap:anywhere} .ck-plist small{grid-column:1;color:var(--muted);font-size:12.5px}
+.ck-plist span{grid-column:2;grid-row:1;color:var(--muted);font-size:13.5px;text-align:right}
+.ck-plist li:has(small) span{grid-row:1/3;align-self:center}
+.ck-plink{margin-top:auto;padding-top:6px;color:var(--accent2);font-family:var(--disp);font-weight:600;text-decoration:none;min-height:32px;display:inline-flex;align-items:center;gap:5px;align-self:flex-start}
+.ck-plink:hover{text-decoration:underline;text-underline-offset:3px}
+.ck-ptodo{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px} .ck-ptodo>h2,.ck-ptodo>.ck-pempty{grid-column:1/-1}
+.ck-grph{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;margin-bottom:6px}
+.ck-grph b{font-size:15.5px} .ck-grph span{color:var(--muted);font-size:13.5px}
+.ck-grph .ck-open{margin-left:auto;min-height:36px;padding:4px 10px;font-size:13px}
+.ck-grp .ck-ml{margin-top:0}
+@media (pointer:coarse){.ck-grph .ck-open{min-height:44px}.ck-plink{min-height:44px}}
 /* Tiles and tool lists of the areas */
 .ck-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
 .ck-tile{display:flex;flex-direction:column;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;color:var(--ink);text-decoration:none;min-height:128px}
@@ -309,6 +332,7 @@ if(matchMedia('(max-width:919px)').matches) $('ck-setd').removeAttribute('open')
 
 /* ---------- start ---------- */
 redraw(); show(keyFromHash(),false);
-return {VERSION,T,esc,nf,lang,register,go,placeholder,fact,toast};
+// intent: a jump one area hands to another ({loc, shop} for the cargo ledger); the target clears it.
+return {VERSION,T,esc,nf,lang,register,go,placeholder,fact,toast,intent:null};
 })();
 """

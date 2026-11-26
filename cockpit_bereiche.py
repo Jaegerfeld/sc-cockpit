@@ -10,11 +10,15 @@
 #   Die Bereiche des Cockpits. Jeder Eintrag wird beim Bauen eine eigene Datei
 #   bereiche/<schlüssel>.js, die die Hülle erst beim ersten Öffnen lädt.
 #
-#   Die Übersicht zeigt je Bereich eine Kachel mit einer Zeile Stand aus den
-#   gemeinsamen Daten. Bereiche, die noch nicht eingezogen sind (Fracht,
-#   Werkstatt, Guides, Pilot), zeigen, was das Cockpit schon weiß, und führen
-#   in das bisherige Tool. So ist kein Bereich eine Sackgasse, solange der
-#   Umzug läuft.
+#   Die Übersicht ist seit 0.4.0 das Lagebild: „Zu erledigen“ (offene Merker
+#   nach Ort gruppiert, zum Abhaken, mit Sprung zum Ort im Logbuch), Flotte,
+#   Fracht und die letzte gelesene Sitzung. Sie liest nur den Browser-Speicher
+#   der Bereiche und lädt deren große Dateien nicht. Namen von Waren und der
+#   Lagerwert stehen deshalb nur im Logbuch selbst.
+#
+#   Bereiche, die noch nicht eingezogen sind (Werkstatt, Guides, Pilot),
+#   zeigen, was das Cockpit schon weiß, und führen in das bisherige Tool. So
+#   ist kein Bereich eine Sackgasse, solange der Umzug läuft.
 #
 #   Seit 0.2.0 ist die Flotte eingezogen: FLOTTE_JS hängt den Komponenten-
 #   Planer ein. Dessen Quelle bleibt im Repo StarCitizen-Schiffskauf-Planer
@@ -23,8 +27,8 @@
 #   StarCitizen-Handels-Planer ein. Ist eine Quelle beim Bau nicht
 #   erreichbar, bleibt für den Bereich der Wegweiser aus BEREICHE.
 #
-#   Reihenfolge des weiteren Umzugs: Übersicht als Lagebild, danach
-#   Werkstatt, Pilot und Guides; Routen und Waren folgen dem Logbuch.
+#   Reihenfolge des weiteren Umzugs: Werkstatt, Pilot und Guides; Routen
+#   und Waren folgen dem Logbuch.
 # =============================================================================
 """Area scripts of the cockpit; each becomes its own lazily loaded file under bereiche/."""
 from __future__ import annotations
@@ -44,25 +48,78 @@ URL = {
 #: Area key -> script. Every script registers itself with Cockpit.register(key, {render}).
 BEREICHE: dict[str, str] = {
     "uebersicht": r"""
-/* ---------- overview: one tile per area with a line of state from the shared data ---------- */
-Cockpit.register('uebersicht',{render(el){const C=Cockpit, T=C.T, s=SCData.summary();
-  const tile=(key,title,text,factHtml)=>`<a class="ck-tile" href="#/${key}"><h2>${C.esc(title)}</h2><p>${C.esc(text)}</p><div class="ck-fact">${factHtml}</div></a>`;
-  const first=!s.ships&&!s.hasLedger&&!s.open&&!s.done;
+/* ---------- overview: status board from the shared data ---------- */
+(function(){
+const C=Cockpit, T=C.T, esc=C.esc, nf=C.nf;
+const read=k=>{try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}};
+// Place of a reminder as text: the ledger place, else the place part of the shop text ("… - Port Tressler (Stanton)").
+const placeTxt=m=>m.loc?String(m.loc).replace(/^p:/,'').split('|').pop():m.shop?String(m.shop).split(' - ').pop().replace(/\s*\([^()]*\)$/,''):'';
+const pretty=raw=>String(raw||'').replace(/^RR_/,'').replace(/_/g,' ').replace(/([a-z])([A-Z])/g,'$1 $2').trim();
+const when=s=>{const d=new Date(String(s||'').replace(/^<|>$/g,'')); return isNaN(d)?'':d.toLocaleString(C.lang()==='en'?'en-GB':'de-DE',{dateStyle:'short',timeStyle:'short'});};
+
+// "To do": open reminders grouped by place, so one stop shows everything to get there.
+function todo(){const open=SCData.open(), fleet=window.SCFleet?SCFleet.read().ships:[];
+  if(!open.length) return `<p class="ck-pempty">${SCData.items().length?T('Alles erledigt.','All done.'):T('Nichts offen. Merker entstehen aus der Einkaufsliste eines Schiffs (Flotte), an einem Ort im Logbuch (Fracht) oder rechts in der Leiste.','Nothing open. Reminders come from the shopping list of a ship (Fleet), from a place in the ledger (Cargo) or from the rail on the right.')}</p>`;
+  const groups=new Map(); for(const m of open){const k=placeTxt(m); if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(m);}
+  const keys=[...groups.keys()].sort((a,b)=>(a==='')-(b==='')||a.localeCompare(b));
+  return keys.map(k=>{const list=groups.get(k), sum=list.reduce((a,m)=>a+(m.price?m.price*(m.n||1):0),0), first=list.find(m=>m.loc||m.shop);
+    return `<div class="ck-grp"><div class="ck-grph"><b>${k?'📍 '+esc(k):T('Ohne Ort','No place')}</b>${sum?`<span>${nf(sum)} aUEC</span>`:''}
+      ${first?`<button type="button" class="btn ck-open" data-loc="${esc(first.loc||'')}" data-shop="${esc(first.shop||'')}">${T('Im Logbuch','In the ledger')} <span aria-hidden="true">→</span><span class="ck-sr"> ${esc(k)}</span></button>`:''}</div>
+      <ul class="ck-ml">${list.map(m=>{const f=m.ship!=null?fleet.find(s=>s.id===m.ship):null;
+        const meta=[f?'🚀 '+esc(f.name||f.model):'',m.shop?esc(String(m.shop).split(' - ')[0]):'',m.price?`${nf(m.price*(m.n||1))} aUEC`:''].filter(Boolean).join(' · ');
+        return `<li><label><input type="checkbox" data-id="${esc(m.id)}"> <span>${m.n>1?esc(m.n)+' × ':''}${esc(m.text)}</span></label>${meta?`<small>${meta}</small>`:''}</li>`;}).join('')}</ul></div>`;}).join('');}
+
+// Fleet: every ship with what is known about it across the areas.
+function flotte(){const fleet=window.SCFleet?SCFleet.read().ships:[], led=read('scha_ledger_v1'), kp=read('scsk_kp'), open=SCData.open();
+  if(!fleet.length) return `<p class="ck-pempty">${T('Noch kein Schiff. Unter „Flotte“ wählst du deine Schiffe.','No ship yet. Pick your ships under “Fleet”.')}</p>`;
+  const rows=fleet.slice(0,6).map(f=>{const scu=(led&&Array.isArray(led.stock)?led.stock:[]).filter(p=>p&&p.l==='s:'+f.id).reduce((a,p)=>a+(+p.z||0)*(+p.n||0),0);
+    const fit=kp&&kp.fit&&kp.fit[f.id]?Object.keys(kp.fit[f.id]).length:0, mk=open.filter(m=>m.ship===f.id).length;
+    const bits=[fit?T(`${fit} ${fit===1?'Teil':'Teile'} getauscht`,`${fit} ${fit===1?'part':'parts'} swapped`):'',scu?`${nf(scu)} SCU ${T('an Bord','aboard')}`:'',mk?`☑ ${mk} ${T('Merker',mk===1?'reminder':'reminders')}`:''].filter(Boolean);
+    return `<li><b>${esc(f.name||f.model)}</b>${f.name?`<small>${esc(f.model)}</small>`:''}<span>${bits.length?bits.join(' · '):T('Standard, leer','stock, empty')}</span></li>`;}).join('');
+  return `<ul class="ck-plist">${rows}</ul>${fleet.length>6?`<p class="ck-pmore">${T(`und ${fleet.length-6} weitere`,`and ${fleet.length-6} more`)}</p>`:''}`;}
+
+// Cargo: totals and the places holding the most.
+function fracht(){const led=read('scha_ledger_v1'), stock=(led&&Array.isArray(led.stock)?led.stock:[]).filter(p=>p&&p.n>0);
+  const notes=led&&led.notes?Object.keys(led.notes).filter(k=>String(led.notes[k]||'').trim()).length:0;
+  if(!stock.length) return `<p class="ck-pempty">${T('Keine Fracht im Logbuch.','No cargo in the ledger.')}${notes?` ${nf(notes)} ${T(notes===1?'Notiz':'Notizen',notes===1?'note':'notes')}.`:''}</p>`;
+  const by={}; for(const p of stock) by[p.l]=(by[p.l]||0)+p.z*p.n;
+  const total=Object.values(by).reduce((a,b)=>a+b,0), top=Object.entries(by).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const name=l=>{if(l[0]==='s'){const s=(led.ships||[]).find(x=>'s:'+x.id===l); return '🚀 '+esc(s?s.n:'?');} return '📍 '+esc(l.slice(2).split('|').pop());};
+  return `<p class="ck-big">${nf(total)} SCU <small>${T('an','at')} ${nf(Object.keys(by).length)} ${T(Object.keys(by).length===1?'Ort':'Orten',Object.keys(by).length===1?'place':'places')}${notes?` · ${nf(notes)} ${T(notes===1?'Notiz':'Notizen',notes===1?'note':'notes')}`:''}</small></p>
+    <ul class="ck-plist">${top.map(([l,s])=>`<li><b>${name(l)}</b><span>${nf(s)} SCU</span></li>`).join('')}</ul>`;}
+
+// Last session the sessions tab of the trade planner has read (its cache holds archived logs, not the running one).
+function sitzung(){const c=read('scha_sessions_cache_v2'), all=c&&typeof c==='object'?Object.values(c).filter(s=>s&&s.start):[];
+  if(!all.length) return `<p class="ck-pempty">${T('Noch keine Sitzung gelesen. Der Reiter „Sitzungen“ im Handels-Planer liest deine Spiel-Logs, nur auf deinem Rechner.','No session read yet. The “Sessions” tab of the trade planner reads your game logs, on your computer only.')}</p>`;
+  const s=all.sort((a,b)=>String(b.start).localeCompare(String(a.start)))[0], j=Array.isArray(s.joins)&&s.joins.length?s.joins[s.joins.length-1]:null;
+  const end={crash:['⚠ Absturz','⚠ crash'],ok:['normal beendet','ended normally'],open:['offen','open']}[s.ended]||['',''];
+  return `<ul class="ck-plist"><li><b>${esc(when(s.start)||'–')}</b><span>${esc(T(...end))}</span></li>
+    ${s.loc?`<li><b>📍 ${esc(pretty(s.loc.raw))}</b><span>${T('letzter Ort','last place')}</span></li>`:''}
+    ${s.ship?`<li><b>🚀 ${esc(pretty(s.ship.raw))}</b><span>${T('letztes Schiff','last ship')}</span></li>`:''}
+    ${j&&j.shard?`<li><b>${esc(j.shard)}</b><span>Shard</span></li>`:''}</ul>
+    <p class="ck-pmore">${T('Stand der zuletzt gelesenen, abgeschlossenen Sitzung.','State of the last finished session that was read.')}</p>`;}
+
+const panel=(cls,title,body,key,linkTxt)=>`<section class="ck-panel ${cls}"><h2>${esc(title)}</h2>${body}${key?`<a class="ck-plink" href="#/${key}">${esc(linkTxt)} <span aria-hidden="true">→</span></a>`:''}</section>`;
+function render(el){const first=!SCData.items().length&&!(window.SCFleet&&SCFleet.read().ships.length)&&!read('scha_ledger_v1');
   el.innerHTML=`<h1>${T('Übersicht','Overview')}</h1>
-    <p class="ck-lede">${T('Das Cockpit führt deine Star-Citizen-Werkzeuge zusammen. Die Bereiche ziehen nach und nach ein; bis dahin führt jeder Bereich in das bisherige Tool.','The cockpit brings your Star Citizen tools together. The areas move in one by one; until then every area leads to the existing tool.')}</p>
-    ${first?`<p class="ck-note">${T('Hier steht noch nichts von dir. Leg rechts einen ersten Merker an, oder wähl unter „Flotte“ deine Schiffe. Online teilt das Cockpit die Daten mit den bisherigen Tools.','Nothing of yours is here yet. Add a first reminder on the right, or pick your ships under “Fleet”. Online the cockpit shares its data with the existing tools.')}</p><br>`:''}
-    <div class="ck-tiles">
-    ${tile('flotte',T('Flotte','Fleet'),T('Meine Schiffe, Komponenten, Schiffskauf','My ships, components, ship purchase'),
-      s.ships?C.fact(s.ships,s.ships===1?'Schiff':'Schiffe',s.ships===1?'ship':'ships'):T('Noch kein Schiff – unter „Schiffe …“ wählen','No ship yet – pick one under “Ships …”'))}
-    ${tile('fracht',T('Fracht','Cargo'),T('Logbuch mit Notizen, Routen, Waren, Screenshot-Auswerter','Ledger with notes, routes, commodities, screenshot reader'),
-      s.posts?`${C.fact(s.scu,'SCU','SCU')} ${T('an','at')} ${C.nf(s.places)} ${T(s.places===1?'Ort':'Orten','place'+(s.places===1?'':'s'))}${s.notes?` · ${C.nf(s.notes)} ${T(s.notes===1?'Notiz':'Notizen','note'+(s.notes===1?'':'s'))}`:''}`
-       :s.notes?C.fact(s.notes,s.notes===1?'Notiz':'Notizen',s.notes===1?'note':'notes'):T('Keine Fracht im Logbuch','No cargo in the ledger'))}
-    ${tile('werkstatt',T('Werkstatt','Workshop'),T('Baupläne, Wikelo','Blueprints, Wikelo'),T('Noch im bisherigen Tool','Still in the existing tool'))}
-    ${tile('guides','Guides',T('Flyer und Karten','Flyers and maps'),T('Noch im bisherigen Tool','Still in the existing tool'))}
-    ${tile('pilot','Pilot',T('Ruf, Sitzungen','Reputation, sessions'),T('Noch im bisherigen Tool','Still in the existing tool'))}
-    <div class="ck-tile"><h2>${T('Zu erledigen','To do')}</h2><p>${T('Merker aus allen Bereichen, rechts in der Leiste','Reminders from all areas, in the rail on the right')}</p>
-      <div class="ck-fact">${s.open?C.fact(s.open,'offen','open'):T('Nichts offen','Nothing open')}${s.done?` · ${C.nf(s.done)} ${T('erledigt','done')}`:''}</div></div>
-    </div>`;}});
+    <p class="ck-lede">${T('Dein Lagebild: was zu erledigen ist, wie es um Flotte und Fracht steht, und wo du zuletzt warst.','Your status board: what there is to do, how fleet and cargo stand, and where you last were.')}</p>
+    ${first?`<p class="ck-note">${T('Hier steht noch nichts von dir. Wähl unter „Flotte“ deine Schiffe oder leg rechts einen ersten Merker an. Online teilt das Cockpit die Daten mit den bisherigen Tools.','Nothing of yours is here yet. Pick your ships under “Fleet” or add a first reminder on the right. Online the cockpit shares its data with the existing tools.')}</p><br>`:''}
+    <div class="ck-board">
+      ${panel('ck-ptodo',T('Zu erledigen','To do')+(SCData.open().length?` (${SCData.open().length})`:''),todo())}
+      ${panel('',T('Flotte','Fleet'),flotte(),'flotte',T('Zur Flotte','To the fleet'))}
+      ${panel('',T('Fracht','Cargo'),fracht(),'fracht',T('Zum Logbuch','To the ledger'))}
+      ${panel('',T('Letzte Sitzung','Last session'),sitzung(),'pilot',T('Zum Piloten','To the pilot'))}
+      ${panel('',T('Werkstatt','Workshop'),`<p class="ck-pempty">${T('Baupläne und Wikelo sind noch im bisherigen Tool.','Blueprints and Wikelo are still in the existing tool.')}</p>`,'werkstatt',T('Zur Werkstatt','To the workshop'))}
+      ${panel('','Guides',`<p class="ck-pempty">${T('Flyer und Karten zum Lesen und Ausdrucken.','Flyers and maps to read and to print.')}</p>`,'guides',T('Zu den Guides','To the guides'))}
+    </div>`;
+  // Tick a reminder; the board is drawn again by the change, so focus goes to the next open one.
+  el.querySelector('.ck-board').addEventListener('change',e=>{const c=e.target.closest('input[data-id]'); if(!c) return;
+    SCData.toggle(c.dataset.id,true); (document.querySelector('#ck-main .ck-ptodo input[data-id]')||document.querySelector('#ck-main h1'))?.focus({preventScroll:true});});
+  // Open the place of a group in the cargo ledger.
+  el.querySelector('.ck-board').addEventListener('click',e=>{const b=e.target.closest('.ck-open'); if(!b) return;
+    C.intent={loc:b.dataset.loc||null,shop:b.dataset.shop||null}; C.go('fracht');});}
+Cockpit.register('uebersicht',{render});
+})();
 """,
     "flotte": r"""
 /* ---------- fleet: fallback when the component planner could not be built ---------- */
@@ -222,7 +279,10 @@ function start(el){
 }
 // Every draw (language, reminders, fleet) takes over fleet changes and redraws the ledger.
 Cockpit.register('fracht',{render(el){if(!node) start(el); else if(node.parentNode!==el) el.replaceChildren(node);
-  if(LBX){if(LBX.sync) LBX.sync(); LBX.render();}}});
+  if(!LBX) return;
+  // A jump from the overview ("In the ledger"): select that place, found by its id or by the shop text.
+  const it=Cockpit.intent; if(it){Cockpit.intent=null; const loc=it.loc||(LBX.shopPlace?LBX.shopPlace(it.shop):null); if(loc) LBX.openLoc(loc);}
+  if(LBX.sync) LBX.sync(); LBX.render();}});
 })();
 """
 
