@@ -2,6 +2,12 @@
 
 Alle nennenswerten Änderungen an diesem Projekt. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.0.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.10.1] – 2026-11-26
+
+### Geändert
+- **Vorbereitung für die Weiterleitung der Einzelseiten.** Die Adressen von Handels-, Schiffskauf-, Bauplan- und Wikelo-Planer sowie des Screenshot-Auswerters leiten künftig ins Cockpit weiter; jede Seite selbst liegt dann unter `app.html` daneben. „Im bisherigen Tool öffnen“ zeigt deshalb auf `app.html`, und der Bau holt die Seiten von dort.
+- Die Werkstatt hat Adressen je Werkzeug: `#/werkstatt/bauplan` und `#/werkstatt/wikelo`.
+
 ## [0.10.0] – 2026-11-26
 
 ### Hinzugefügt

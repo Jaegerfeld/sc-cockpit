@@ -8,7 +8,7 @@ Eine App für meine Star-Citizen-Werkzeuge: Flotte, Fracht, Werkstatt, Guides un
 
 ## Stand
 
-Stand Version 0.10.0, alle sechs Bereiche sind eingezogen:
+Stand Version 0.10.1, alle sechs Bereiche sind eingezogen:
 
 - **Seitenleiste** mit den Bereichen Übersicht, Flotte, Fracht, Werkstatt, Guides und Pilot. Jeder Bereich wird beim ersten Öffnen geladen.
 - **Merker-Leiste** rechts, immer sichtbar: eigene Merker anlegen, abhaken, entfernen.
@@ -24,7 +24,7 @@ Stand Version 0.10.0, alle sechs Bereiche sind eingezogen:
 
 - **Aufs Handy:** Logbuch und Ruf als QR-Code und Link; das Handy öffnet das Cockpit im passenden Bereich.
 
-Als Nächstes: die Einzelseiten ablösen.
+Die Adressen der fünf Einzelseiten leiten ins Cockpit weiter; jede Seite selbst liegt unter `app.html` neben ihrer Adresse.
 
 ## Die bisherigen Tools
 

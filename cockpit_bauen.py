@@ -49,6 +49,7 @@ import json
 import os
 import re
 import sys
+import urllib.error
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -223,6 +224,10 @@ WERKZEUGE = {
     "auswerter": ("StarCitizen-Screenshot-Auswerter", "SC_Screenshot_Auswerter.html",
                   "https://jaegerfeld.github.io/StarCitizen-Screenshot-Auswerter/", "SC_AUSWERTER", "_auswerter"),
 }
+#: Name of a tool's own page next to its plain address (which forwards to the cockpit).
+PAGE = "app.html"
+#: A fetched tool page is at least this long; anything shorter is a forwarding or error page.
+MIN_PAGE = 20000
 #: The two whole pages of the workshop.
 WERKSTATT = ("bauplan", "wikelo")
 #: Modules every tool repo has under the same name (byte-identical helpers, and each tool's own version).
@@ -246,9 +251,20 @@ def tool_page(key: str, use_cache: bool) -> str:
     src = source_dir(env, folder, repo, name)
     if not use_cache:
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 sc-cockpit"})
-            with urllib.request.urlopen(req, timeout=60) as r:
-                return r.read().decode("utf-8")
+            # The tool's own page is app.html; the plain address forwards to the cockpit. Until a tool has
+            # published app.html, its plain address still is the page.
+            for address in (url + PAGE, url):
+                try:
+                    req = urllib.request.Request(address, headers={"User-Agent": "Mozilla/5.0 sc-cockpit"})
+                    with urllib.request.urlopen(req, timeout=60) as r:
+                        html = r.read().decode("utf-8")
+                except urllib.error.HTTPError as e:
+                    if e.code != 404 or address == url:
+                        raise
+                    continue
+                if len(html) < MIN_PAGE:
+                    raise OSError(f"{address} ist keine Werkzeugseite ({len(html)} Zeichen; Weiterleitung?)")
+                return html
         except OSError as e:
             if not src:
                 raise
@@ -280,7 +296,8 @@ def split_page(html: str, base: str) -> dict:
 
     Args:
         html: The page.
-        base: Published address of the tool; relative ``bilder/`` paths in its data are made absolute.
+        base: Published address of the tool's page; relative ``bilder/`` paths in its data are made
+            absolute against its folder.
 
     Returns:
         ``{"css", "html", "attrs", "js", "url", "ext"}``: styles for the shadow root, body markup without
@@ -301,7 +318,8 @@ def split_page(html: str, base: str) -> dict:
     css = "\n".join(re.findall(r"<style[^>]*>(.*?)</style>", html, re.S))
     tag = re.search(r"<html([^>]*)>", html)
     attrs = dict(re.findall(r'([\w-]+)="([^"]*)"', tag.group(1))) if tag else {}
-    absolute = lambda s: re.sub(r'(["\'`])bilder/', lambda k: k.group(1) + base + "bilder/", s)  # noqa: E731
+    folder = base.rsplit("/", 1)[0] + "/"
+    absolute = lambda s: re.sub(r'(["\'`])bilder/', lambda k: k.group(1) + folder + "bilder/", s)  # noqa: E731
     return {"css": shadow_css(css), "html": absolute(script.sub("", body)), "attrs": attrs,
             "js": absolute("\n;\n".join(js)), "url": base,
             "ext": re.findall(r'<script[^>]*\ssrc="([^"]+)"', html)}
@@ -361,7 +379,7 @@ def werkstatt_js(use_cache: bool) -> str:
     Raises:
         OSError, ValueError: If a page is unavailable or cannot be split.
     """
-    tools = {key: split_page(tool_page(key, use_cache), WERKZEUGE[key][2]) for key in WERKSTATT}
+    tools = {key: split_page(tool_page(key, use_cache), WERKZEUGE[key][2] + PAGE) for key in WERKSTATT}
     sizes = ", ".join(f"{k} {len(v['js']) // 1024} KB Skript" for k, v in tools.items())
     print(f"  Werkstatt: {sizes}.")
     return cb.werkstatt_script(tools)
@@ -464,7 +482,7 @@ def auswerter_tool(use_cache: bool) -> dict:
     Raises:
         OSError, ValueError: If the page is unavailable or cannot be split.
     """
-    tool = split_page(tool_page("auswerter", use_cache), WERKZEUGE["auswerter"][2])
+    tool = split_page(tool_page("auswerter", use_cache), WERKZEUGE["auswerter"][2] + PAGE)
     print(f"  Auswerter: {len(tool['js']) // 1024} KB Skript, {len(tool['ext'])} externe Bibliothek(en).")
     return tool
 

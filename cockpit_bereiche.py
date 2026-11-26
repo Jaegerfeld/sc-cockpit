@@ -51,13 +51,14 @@ from __future__ import annotations
 
 import json
 
-#: Addresses of the existing tools that still do the work of an area.
+#: Addresses of the tools themselves, for "open in the existing tool". The plain address of each of the
+#: five planners forwards to the cockpit; the tool's own page is ``app.html`` next to it.
 URL = {
-    "schiffskauf": "https://jaegerfeld.github.io/StarCitizen-Schiffskauf-Planer/",
-    "handel": "https://jaegerfeld.github.io/StarCitizen-Handels-Planer/",
-    "auswerter": "https://jaegerfeld.github.io/StarCitizen-Screenshot-Auswerter/",
-    "bauplan": "https://jaegerfeld.github.io/StarCitizen-Bauplan-Planer/",
-    "wikelo": "https://jaegerfeld.github.io/StarCitizen-Wikelo-Planer/",
+    "schiffskauf": "https://jaegerfeld.github.io/StarCitizen-Schiffskauf-Planer/app.html",
+    "handel": "https://jaegerfeld.github.io/StarCitizen-Handels-Planer/app.html",
+    "auswerter": "https://jaegerfeld.github.io/StarCitizen-Screenshot-Auswerter/app.html",
+    "bauplan": "https://jaegerfeld.github.io/StarCitizen-Bauplan-Planer/app.html",
+    "wikelo": "https://jaegerfeld.github.io/StarCitizen-Wikelo-Planer/app.html",
     "guides": "https://jaegerfeld.github.io/sc-guides/",
 }
 
@@ -496,7 +497,8 @@ function start(el){
   new MutationObserver(()=>{for(const k in M) follow(k);}).observe(html,{attributes:true,attributeFilter:['data-theme']});
 }
 Cockpit.register('werkstatt',{render(el){if(!node) start(el); else if(node.parentNode!==el) el.replaceChildren(node);
-  const it=Cockpit.intent; if(it&&it.tool){tab=it.tool; Cockpit.intent=null;}
+  // A jump names the tool as {tool}; an address "#/werkstatt/<tool>" arrives as {pane}.
+  const it=Cockpit.intent; if(it&&(it.tool||it.pane)){tab=it.tool||it.pane; Cockpit.intent=null;}
   show(tab); for(const k in M) follow(k);}});
 })();
 """
