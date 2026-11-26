@@ -52,7 +52,7 @@ Merker gibt es nur für Schiffe deiner Flotte. Ein Schiff in der Vorschau fügst
 4. Orte und Schiffe mit offenen Merkern tragen in den Listen **☑ n Merker**. Der Filter **nur mit Fracht oder Notiz** zeigt sie mit an.
 5. Darunter steht wie gewohnt das Feld **Notizen** für freien Text.
 
-Fracht buchst du wie im Handels-Planer: **+ Fracht einbuchen**, Posten anklicken oder ziehen zum Verschieben. Die Unterreiter **Routen & Waren** und **Auswerter** daneben arbeiten wie die bisherigen Seiten; ihre eigene Anleitung steht dort unter „Anleitung + How-To“. „Aufs Handy“ gibt es weiterhin nur im Handels-Planer.
+Fracht buchst du wie im Handels-Planer: **+ Fracht einbuchen**, Posten anklicken oder ziehen zum Verschieben. Die Unterreiter **Routen & Waren** und **Auswerter** daneben arbeiten wie die bisherigen Seiten; ihre eigene Anleitung steht dort unter „Anleitung + How-To“. **Aufs Handy …** packt Schiffe, Fracht und Notizen als QR-Code und Link: mit der Handy-Kamera scannen, das Cockpit öffnet sich dort unter „Fracht“ und übernimmt den Stand (es fragt vorher, wenn dort schon etwas liegt). Denselben Knopf hat der Ruf unter „Pilot“.
 
 ## Pilot: Ruf und Sitzungen
 

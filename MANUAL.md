@@ -52,7 +52,7 @@ Reminders are kept for ships of your fleet only. Add a ship in preview with **+ 
 4. Places and ships with open reminders carry **☑ n reminders** in the lists. The filter **with cargo or a note only** includes them.
 5. Below that is the **Notes** field for free text, as before.
 
-You book cargo as in the trade planner: **+ Book cargo in**, click or drag a post to move it. The sub-tabs **Routes & commodities** and **Screenshot reader** next to it work like the existing pages; their own manual is there under "Manual + How-To". "To the phone" is still only in the trade planner.
+You book cargo as in the trade planner: **+ Book cargo in**, click or drag a post to move it. The sub-tabs **Routes & commodities** and **Screenshot reader** next to it work like the existing pages; their own manual is there under "Manual + How-To". **To the phone …** packs ships, cargo and notes as a QR code and link: scan it with the phone camera, the cockpit opens there under "Cargo" and takes the state over (it asks first if something is already there). The reputation under "Pilot" has the same button.
 
 ## Pilot: reputation and sessions
 

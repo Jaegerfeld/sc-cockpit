@@ -8,7 +8,7 @@ One app for my Star Citizen tools: fleet, cargo, workshop, guides and pilot, sha
 
 ## Status
 
-State of version 0.9.0, all six areas have moved in:
+State of version 0.10.0, all six areas have moved in:
 
 - **Sidebar** with the areas Overview, Fleet, Cargo, Workshop, Guides and Pilot. Each area is loaded on first use.
 - **Reminder rail** on the right, always visible: add your own reminders, tick them off, remove them.
@@ -22,7 +22,9 @@ State of version 0.9.0, all six areas have moved in:
 
 - **One backup file for everything:** save, load with a before/after comparison, one way back. It carries the data into the offline package or to a second computer.
 
-Next: replace the single pages, "To the phone" in the cockpit.
+- **To the phone:** ledger and reputation as a QR code and link; the phone opens the cockpit in the matching area.
+
+Next: replace the single pages.
 
 ## The existing tools
 

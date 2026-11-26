@@ -287,6 +287,12 @@ function load(key){if(REG[key]) return Promise.resolve();
 const area=key=>AREAS.find(a=>a.key===key);
 // "#/<area>" picks an area; a loadout link of the component planner ("#kp=…") belongs to the fleet.
 const keyFromHash=()=>{if(/^#kp=/.test(location.hash)) return 'flotte'; const k=(location.hash.match(/^#\/([a-z]+)/)||[])[1]; return area(k)?k:AREAS[0].key;};
+// A "to the phone" link opened here ("#lb=…" cargo ledger, "#ruf=…" reputation): remember the state for its
+// area and show that area's own address. The part after "#" never reaches a server.
+let handy=null;
+function takeHandy(){const h=location.hash||'', m=/^#(ruf|lb)=([01]\.[A-Za-z0-9_-]+)$/.exec(h);
+  if(!m){if(/^#(ruf|lb)=/.test(h)){history.replaceState(null,'','#/'+(h[1]==='l'?'fracht':'pilot')); setTimeout(()=>toast(T('Der Link ist unvollständig oder beschädigt – bitte am PC neu erzeugen.','The link is incomplete or damaged – please create it again on the PC.')),0); return true;} return false;}
+  handy={kind:m[1],code:m[2]}; history.replaceState(null,'','#/'+(m[1]==='lb'?'fracht':'pilot')); return true;}
 // Show an area: mark it in the navigation, load it if needed, draw it. focus = move focus to its heading.
 async function show(key,focus){cur=key; const a=area(key), main=$('ck-main');
   document.querySelectorAll('#ck-nav a[data-key]').forEach(l=>{if(l.dataset.key===key) l.setAttribute('aria-current','page'); else l.removeAttribute('aria-current');});
@@ -298,12 +304,13 @@ async function show(key,focus){cur=key; const a=area(key), main=$('ck-main');
     $('ck-retry').addEventListener('click',()=>show(key,true)); return;}
   clearTimeout(wait); if(cur!==key) return;
   // "#/<area>/<sub-tab>" opens a sub-tab of the area (a link or a reload lands there); areas without one ignore it.
+  if(handy&&!Cockpit.intent){Cockpit.intent={handy}; handy=null;}
   const sub=(location.hash.match(/^#\/[a-z]+\/([a-z]+)/)||[])[1]; if(sub&&!Cockpit.intent) Cockpit.intent={pane:sub};
   draw(); if(sub&&Cockpit.intent&&Cockpit.intent.pane===sub) Cockpit.intent=null; if(focus){const h=main.querySelector('h1'); if(h){h.setAttribute('tabindex','-1'); h.focus({preventScroll:true});} window.scrollTo({top:0});}}
 function draw(){const main=$('ck-main'); if(!REG[cur]) return;
   try{REG[cur].render(main);}catch(e){main.innerHTML=`<p class="ck-state">${T('Dieser Bereich hat einen Fehler gemeldet:','This area reported an error:')} ${esc(e.message)}</p>`;}}
 function go(key){if(keyFromHash()===key&&cur===key) return; location.hash='#/'+key;}
-window.addEventListener('hashchange',()=>{if(/^#\//.test(location.hash)||!location.hash) show(keyFromHash(),true);});
+window.addEventListener('hashchange',()=>{if(takeHandy()||/^#\//.test(location.hash)||!location.hash) show(keyFromHash(),true);});
 $('ck-nav').addEventListener('click',e=>{if(e.target.closest('.ck-tomerker')){e.preventDefault(); $('ck-rail').scrollIntoView({behavior:'smooth'}); $('ck-mtext').focus({preventScroll:true});}});
 
 /* ---------- building blocks for the areas ---------- */
@@ -489,7 +496,7 @@ function tool(host,key,info){if(TM[key]){toolFollow(key); return Promise.resolve
 new MutationObserver(()=>{for(const k in TM) toolFollow(k);}).observe(root,{attributes:true,attributeFilter:['data-theme']});
 
 /* ---------- start ---------- */
-redraw(); show(keyFromHash(),false);
+takeHandy(); redraw(); show(keyFromHash(),false);
 // intent: a jump one area hands to another ({loc, shop} for the cargo ledger); the target clears it.
 // tool/TOOLS: whole tools as sub-tabs of an area (see above).
 return {VERSION,T,esc,nf,lang,register,go,placeholder,fact,toast,tool,TOOLS,intent:null};

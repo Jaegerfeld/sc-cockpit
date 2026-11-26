@@ -296,6 +296,10 @@ function show(p){pane=p in PANES?p:'lb';
   node.querySelectorAll('[data-pane]').forEach(h=>{h.hidden=h.dataset.pane!==pane;});
   node.querySelectorAll('.ck-subtabs [data-t]').forEach(x=>x.setAttribute('aria-selected',String(x.dataset.t===pane)));
   if(PANES[pane]) Cockpit.tool(node.querySelector(`[data-pane="${pane}"]`),pane,PANES[pane]);}
+// A ledger sent with "To the phone": decode it and hand it to the ledger (it asks before replacing a state).
+function recv(code){const bad=()=>Cockpit.toast(Cockpit.T('Der Link ist unvollständig oder beschädigt – bitte am PC neu erzeugen.','The link is incomplete or damaged – please create it again on the PC.'));
+  if(typeof HY==='undefined'){bad(); return;}
+  HY._dec(code).then(d=>{try{LBX.fromHandy(d);}catch(e){bad();}},bad);}
 // What the ledger expects from its page.
 function toast(m){Cockpit.toast(m);}
 function showView(){}
@@ -322,7 +326,9 @@ function start(el){
 Cockpit.register('fracht',{render(el){if(!node) start(el); else if(node.parentNode!==el) el.replaceChildren(node);
   if(!LBX){show(pane); return;}
   // A jump from the overview ("In the ledger"): select that place, found by its id or by the shop text.
-  const it=Cockpit.intent; if(it){Cockpit.intent=null; if(it.pane) pane=it.pane; const loc=it.loc||(LBX.shopPlace?LBX.shopPlace(it.shop):null); if(loc){pane='lb'; LBX.openLoc(loc);}}
+  const it=Cockpit.intent; if(it){Cockpit.intent=null; if(it.pane) pane=it.pane;
+    if(it.handy&&it.handy.kind==='lb'){pane='lb'; recv(it.handy.code);}
+    const loc=it.loc||(LBX.shopPlace?LBX.shopPlace(it.shop):null); if(loc){pane='lb'; LBX.openLoc(loc);}}
   show(pane); if(LBX.sync) LBX.sync(); LBX.render();}});
 })();
 """
@@ -382,14 +388,17 @@ function start(el){
   const st=document.createElement('style'); st.textContent=/*CSS*/''; document.head.appendChild(st);
   node=document.createElement('div'); node.className='ck-pilot'; node.innerHTML=HEAD+/*HTML*/'';
   el.replaceChildren(node);
-  // "To the phone" needs the phone module of the trade planner page.
-  const h=node.querySelector('#rf-handy'); if(h) h.hidden=true;
+  // "To the phone" needs the phone module (HY) the cockpit page carries.
+  const h=node.querySelector('#rf-handy'); if(h) h.hidden=typeof HY==='undefined';
   X=boot();
   node.querySelector('.ck-subtabs').addEventListener('click',e=>{const b=e.target.closest('[data-t]'); if(b) show(b.dataset.t);});
   node.addEventListener('click',summary); node.addEventListener('change',summary);
 }
 Cockpit.register('pilot',{render(el){if(!node) start(el); else if(node.parentNode!==el) el.replaceChildren(node);
   const it=Cockpit.intent; if(it&&it.tab){tab=it.tab; Cockpit.intent=null;}
+  // A reputation state sent with "To the phone": the tab shows it as the state from the PC.
+  if(it&&it.handy&&it.handy.kind==='ruf'){tab='rep'; Cockpit.intent=null; const bad=()=>Cockpit.toast(Cockpit.T('Der Link ist unvollständig oder beschädigt – bitte am PC neu erzeugen.','The link is incomplete or damaged – please create it again on the PC.'));
+    if(typeof HY==='undefined') bad(); else HY._dec(it.handy.code).then(d=>{try{X.RF.fromHandy(d); summary();}catch(e){bad();}},bad);}
   show(tab);}});
 })();
 """
