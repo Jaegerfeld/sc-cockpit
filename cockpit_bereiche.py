@@ -16,7 +16,7 @@
 #   der Bereiche und lädt deren große Dateien nicht. Namen von Waren und der
 #   Lagerwert stehen deshalb nur im Logbuch selbst.
 #
-#   Bereiche, die noch nicht eingezogen sind (Werkstatt, Guides),
+#   Bereiche, die noch nicht eingezogen sind (Guides),
 #   zeigen, was das Cockpit schon weiß, und führen in das bisherige Tool. So
 #   ist kein Bereich eine Sackgasse, solange der Umzug läuft.
 #
@@ -28,8 +28,15 @@
 #   und Sitzungen. Ist eine Quelle beim Bau nicht erreichbar, bleibt für den
 #   Bereich der Wegweiser aus BEREICHE.
 #
-#   Reihenfolge des weiteren Umzugs: Werkstatt und Guides; Routen und Waren
-#   folgen dem Logbuch.
+#   Seit 0.6.0 hängt WERKSTATT_JS den Bauplan- und den Wikelo-Planer ein.
+#   Die beiden sind ganze Seiten aus einer Vorlage, mit globalen Stilen und
+#   einfachen ids, keine Bausteine. Statt sie umzuschreiben, kommt jede
+#   fertige Seite in einen eigenen Shadow Root: Stile und ids bleiben dort,
+#   das Seitenskript läuft mit einem Ersatz-``document``. An den beiden Tools
+#   ändert sich dafür nichts; der Bau nimmt ihre veröffentlichte Seite.
+#
+#   Reihenfolge des weiteren Umzugs: Guides; Routen und Waren folgen dem
+#   Logbuch.
 # =============================================================================
 """Area scripts of the cockpit; each becomes its own lazily loaded file under bereiche/."""
 from __future__ import annotations
@@ -119,7 +126,7 @@ function render(el){const first=!SCData.items().length&&!(window.SCFleet&&SCFlee
       ${panel('',T('Fracht','Cargo'),fracht(),'fracht',T('Zum Logbuch','To the ledger'))}
       ${panel('ck-psess',T('Letzte Sitzung','Last session'),sitzung(),'pilot',T('Zu den Sitzungen','To the sessions'))}
       ${panel('',T('Ruf','Reputation'),ruf(),'pilot',T('Zum Ruf','To the reputation'))}
-      ${panel('',T('Werkstatt','Workshop'),`<p class="ck-pempty">${T('Baupläne und Wikelo sind noch im bisherigen Tool.','Blueprints and Wikelo are still in the existing tool.')}</p>`,'werkstatt',T('Zur Werkstatt','To the workshop'))}
+      ${panel('',T('Werkstatt','Workshop'),`<p class="ck-pempty">${T('Baupläne planen und den Tauschhandel bei Wikelo verfolgen.','Plan blueprints and track the trade with Wikelo.')}</p>`,'werkstatt',T('Zur Werkstatt','To the workshop'))}
       ${panel('','Guides',`<p class="ck-pempty">${T('Flyer und Karten zum Lesen und Ausdrucken.','Flyers and maps to read and to print.')}</p>`,'guides',T('Zu den Guides','To the guides'))}
     </div>`;
   // Tick a reminder; the board is drawn again by the change, so focus goes to the next open one.
@@ -153,7 +160,7 @@ Cockpit.register('fracht',{render(el){const C=Cockpit, s=SCData.summary();
     note:['Die Daten des Fracht-Logbuchs waren beim letzten Bau nicht erreichbar; der nächste Bau holt sie neu. Bis dahin führst du das Logbuch im Handels-Planer.','The cargo ledger data was unavailable at the last build; the next build fetches it again. Until then keep the ledger in the trade planner.']});}});
 """,
     "werkstatt": r"""
-/* ---------- workshop (not moved in yet) ---------- */
+/* ---------- workshop: fallback when the two planners could not be built ---------- */
 Cockpit.register('werkstatt',{render(el){Cockpit.placeholder(el,{title:['Werkstatt','Workshop'],
     lede:['Baupläne und der Tauschhandel bei Wikelo: was du brauchst, was du hast, was noch fehlt.','Blueprints and the trade with Wikelo: what you need, what you have, what is still missing.'],
     tools:[{ico:'🛠️',name:['Bauplan-Planer','Blueprint planner'],what:['Baupläne wählen, Material und Bestand gegenrechnen.','Pick blueprints, set material against stock.'],url:'__bauplan__'},
@@ -389,6 +396,98 @@ def pilot_script(html: str, css: str, sz_js: str, rf_js: str, places: list) -> s
             raise ValueError(f"Marke {mark} fehlt in der Pilot-Vorlage")
         js = js.replace(mark, value)
     return js.strip() + "\n"
+
+
+#: Workshop area with the blueprint planner and the Wikelo planner. Both are whole pages of their own
+#: (one template each, with global styles and plain ids), not panels. Each one is therefore mounted from
+#: its finished page into its own shadow root: styles and ids stay inside, and the page script runs with
+#: a stand-in ``document`` that points at that root. Nothing in the two tools has to change for this.
+WERKSTATT_JS = r"""
+/* ---------- workshop: blueprint planner and Wikelo planner, each in its own shadow root ---------- */
+(function(){
+const C=Cockpit;
+// Per tool: styles (with :root/html/body mapped to .sc-root), body markup, attributes of its <html>, and
+// its page script as a function of the stand-in document.
+const TOOLS={
+/*TOOLS*/
+};
+// Inside the cockpit the tool's own title, language and theme switches and its links to the other tools
+// are not needed; its action row (manual, what's new, tool actions) stays.
+const EXTRA=`
+  .sc-root{background:transparent!important;min-height:0!important;overflow:visible!important}
+  .hazard,.fh .fh-eyebrow,.fh .fh-title,.fh .fh-lede,.fh .fh-navd,.fh .fh-seg,.fh #themeBtn{display:none!important}
+  .fh{padding:0 0 6px!important} .fh .fh-actions{margin-top:0!important}
+  .wrap,.fhwrap,main{max-width:none!important;padding-left:0!important;padding-right:0!important}`;
+let node=null, tab='bauplan';
+const M={};
+const html=document.documentElement;
+// Stand-in for `document` inside a tool: lookups and listeners go to the shadow root, <html> and <body>
+// are the tool's root element, everything else is the real document.
+function standIn(root,el){return {
+  getElementById:id=>root.getElementById(id), querySelector:s=>root.querySelector(s), querySelectorAll:s=>root.querySelectorAll(s),
+  addEventListener:(t,f,o)=>root.addEventListener(t,f,o), removeEventListener:(t,f,o)=>root.removeEventListener(t,f,o),
+  createElement:t=>document.createElement(t), createElementNS:(n,t)=>document.createElementNS(n,t),
+  createTextNode:t=>document.createTextNode(t), createDocumentFragment:()=>document.createDocumentFragment(),
+  get documentElement(){return el;}, get body(){return el;}, get head(){return document.head;},
+  get activeElement(){return root.activeElement;}, readyState:'complete',
+  get title(){return document.title;}, set title(v){}, get hidden(){return document.hidden;}, get visibilityState(){return document.visibilityState;}};}
+// The tool follows the cockpit: theme as an attribute on its root, language through its own switch
+// (so its script redraws and remembers the language as usual).
+function follow(key){const m=M[key]; if(!m||m.failed) return;
+  m.el.setAttribute('data-theme',html.getAttribute('data-theme')||'dark');
+  const want=C.lang(), cur=(m.el.getAttribute('data-lang')||m.el.getAttribute('lang')||'de').slice(0,2);
+  if(cur!==want){const b=m.root.querySelector(`.fh-seg [data-lang="${want}"]`); if(b) b.click();}}
+function mount(key){const t=TOOLS[key], host=node.querySelector(`[data-tool="${key}"]`), root=host.attachShadow({mode:'open'});
+  const st=document.createElement('style'); st.textContent=t.css+EXTRA; root.appendChild(st);
+  const el=document.createElement('div'); el.className='sc-root'; for(const k in t.attrs) el.setAttribute(k,t.attrs[k]);
+  el.setAttribute('data-theme',html.getAttribute('data-theme')||'dark'); el.innerHTML=t.html; root.appendChild(el);
+  M[key]={root,el};
+  try{t.boot(standIn(root,el));}
+  catch(e){M[key].failed=true; console.error(e);
+    el.innerHTML=`<p style="color:var(--muted);padding:20px 4px">${C.esc(C.T('Dieses Werkzeug ließ sich hier nicht starten:','This tool could not be started here:'))} ${C.esc(e.message)}. <a href="${C.esc(t.url)}" target="_blank" rel="noopener" style="color:var(--accent2)">${C.esc(C.T('Im bisherigen Tool öffnen ↗','Open in the existing tool ↗'))}</a></p>`;}
+  follow(key);}
+function show(k){tab=TOOLS[k]?k:'bauplan';
+  node.querySelectorAll('[data-tool]').forEach(h=>{h.hidden=h.dataset.tool!==tab;});
+  node.querySelectorAll('.ck-subtabs [data-t]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.t===tab)));
+  if(!M[tab]) mount(tab); else follow(tab);}
+function start(el){
+  node=document.createElement('div'); node.className='ck-werk';
+  node.innerHTML=`<h1><span class="de">Werkstatt</span><span class="en">Workshop</span></h1>
+    <p class="ck-lede"><span class="de">Baupläne und der Tauschhandel bei Wikelo: was du brauchst, was du hast, was noch fehlt.</span><span class="en">Blueprints and the trade with Wikelo: what you need, what you have, what is still missing.</span></p>
+    <div class="ck-subtabs" role="tablist" aria-label="Werkstatt / Workshop">
+      <button type="button" role="tab" data-t="bauplan"><span class="de">Baupläne</span><span class="en">Blueprints</span></button>
+      <button type="button" role="tab" data-t="wikelo">Wikelo</button></div>
+    <div data-tool="bauplan"></div><div data-tool="wikelo" hidden></div>`;
+  el.replaceChildren(node);
+  node.querySelector('.ck-subtabs').addEventListener('click',e=>{const b=e.target.closest('[data-t]'); if(b) show(b.dataset.t);});
+  // The theme button of the cockpit does not redraw the areas; follow the attribute directly.
+  new MutationObserver(()=>{for(const k in M) follow(k);}).observe(html,{attributes:true,attributeFilter:['data-theme']});
+}
+Cockpit.register('werkstatt',{render(el){if(!node) start(el); else if(node.parentNode!==el) el.replaceChildren(node);
+  const it=Cockpit.intent; if(it&&it.tool){tab=it.tool; Cockpit.intent=null;}
+  show(tab); for(const k in M) follow(k);}});
+})();
+"""
+
+
+def werkstatt_script(tools: dict[str, dict]) -> str:
+    """Return the workshop area script with the given tool pages built in.
+
+    Args:
+        tools: Tool key -> ``{"css", "html", "attrs", "js", "url"}`` as produced by the build.
+
+    Returns:
+        JavaScript source of ``bereiche/werkstatt.js``.
+
+    Raises:
+        ValueError: If the template mark is missing.
+    """
+    dump = lambda v: json.dumps(v, ensure_ascii=False)  # noqa: E731
+    parts = [f"{key}:{{css:{dump(t['css'])},html:{dump(t['html'])},attrs:{dump(t['attrs'])},url:{dump(t['url'])},\n"
+             f"boot:function(document){{\n{t['js']}\n}}}}" for key, t in tools.items()]
+    if WERKSTATT_JS.count("/*TOOLS*/") != 1:
+        raise ValueError("Marke /*TOOLS*/ fehlt in der Werkstatt-Vorlage")
+    return WERKSTATT_JS.replace("/*TOOLS*/", ",\n".join(parts)).strip() + "\n"
 
 
 def scripts() -> dict[str, str]:

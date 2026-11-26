@@ -29,6 +29,12 @@
 #   Repo kommen für den Bereich Pilot die Reiter Ruf und Sitzungen samt der
 #   Ruf-Tabelle ruf_tabelle.json; das braucht kein Netz.
 #
+#   Die Werkstatt nimmt die fertigen Seiten von Bauplan- und Wikelo-Planer:
+#   ohne --cache die veröffentlichte Seite (GitHub Pages, täglich frisch
+#   gebaut), sonst oder als Rückfall die Datei im Nachbar-Repo. split_page()
+#   zerlegt sie in Stile, Markup und Skript, shadow_css() bildet :root, html
+#   und body auf das Wurzelelement im Shadow Root ab.
+#
 #   kopfzeile.py kennt das Cockpit noch nicht (die Datei liegt byte-gleich in
 #   den fünf Tool-Repos). Deshalb setzt der Bau den Changelog-Link des
 #   „Was ist neu?“-Dialogs hier auf dieses Repo, statt kopfzeile.py zu ändern.
@@ -40,6 +46,7 @@ import functools
 import importlib
 import json
 import os
+import re
 import sys
 import urllib.request
 import zipfile
@@ -177,6 +184,109 @@ def pilot_js(use_cache: bool) -> str:
                            rf.RF_JS.replace("/*__RUF__*/null", ruf_json), places)
 
 
+#: Whole-page tools mounted in the workshop: key -> (repo, built page, published address, env var, folder).
+WERKZEUGE = {
+    "bauplan": ("StarCitizen-Bauplan-Planer", "SC_Bauplan_Planer.html",
+                "https://jaegerfeld.github.io/StarCitizen-Bauplan-Planer/", "SC_BAUPLAN", "_bauplan"),
+    "wikelo": ("StarCitizen-Wikelo-Planer", "SC_Wikelo_Planer.html",
+               "https://jaegerfeld.github.io/StarCitizen-Wikelo-Planer/", "SC_WIKELO", "_wikelo"),
+}
+
+
+def tool_page(key: str, use_cache: bool) -> str:
+    """Return the finished page of a whole-page tool.
+
+    Args:
+        key: Key in ``WERKZEUGE``.
+        use_cache: Take the built file from the tool's repo next to this one instead of the published page.
+
+    Returns:
+        The page as HTML text.
+
+    Raises:
+        OSError: If neither the published page nor a local file is available.
+    """
+    repo, name, url, env, folder = WERKZEUGE[key]
+    src = source_dir(env, folder, repo, name)
+    if not use_cache:
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 sc-cockpit"})
+            with urllib.request.urlopen(req, timeout=60) as r:
+                return r.read().decode("utf-8")
+        except OSError as e:
+            if not src:
+                raise
+            print(f"  Hinweis: {url} nicht erreichbar ({e}); nehme die Datei aus {src.name}.")
+    if not src:
+        raise OSError(f"Seite von {repo} nicht gefunden")
+    return (src / name).read_text(encoding="utf-8")
+
+
+def shadow_css(css: str) -> str:
+    """Map the document-level selectors of a page's styles to the root element inside a shadow root.
+
+    ``:root``, ``html`` and ``body`` do not exist inside a shadow tree; the tool's root element
+    ``.sc-root`` stands in for all three and carries the attributes of ``<html>`` (theme, language).
+
+    Args:
+        css: Stylesheet text of the page.
+
+    Returns:
+        The stylesheet with those selectors replaced.
+    """
+    css = css.replace(":root", ".sc-root")
+    # "html" and "body" only as whole selector tokens: not "tbody", ".fh-dbody" or "var(--body)".
+    return re.sub(r"(?<![\w.#-])(?:html|body)(?=[\s,{\[.:>+~])", ".sc-root", css)
+
+
+def split_page(html: str, base: str) -> dict:
+    """Split a finished tool page into the parts the workshop mounts.
+
+    Args:
+        html: The page.
+        base: Published address of the tool; relative ``bilder/`` paths in its data are made absolute.
+
+    Returns:
+        ``{"css", "html", "attrs", "js", "url"}``: styles for the shadow root, body markup without the
+        page scripts (JSON data blocks stay), attributes of ``<html>``, the page scripts in order.
+
+    Raises:
+        ValueError: If the page has no body or no script.
+    """
+    m = re.search(r"<body[^>]*>(.*)</body>", html, re.S)
+    if not m:
+        raise ValueError("Seite ohne <body>")
+    body = m.group(1)
+    script = re.compile(r"<script>(.*?)</script>", re.S)
+    js = [s for s in script.findall(html) if s.strip()]
+    if not js:
+        raise ValueError("Seite ohne Skript")
+    css = "\n".join(re.findall(r"<style[^>]*>(.*?)</style>", html, re.S))
+    tag = re.search(r"<html([^>]*)>", html)
+    attrs = dict(re.findall(r'([\w-]+)="([^"]*)"', tag.group(1))) if tag else {}
+    absolute = lambda s: re.sub(r'(["\'`])bilder/', lambda k: k.group(1) + base + "bilder/", s)  # noqa: E731
+    return {"css": shadow_css(css), "html": absolute(script.sub("", body)), "attrs": attrs,
+            "js": absolute("\n;\n".join(js)), "url": base}
+
+
+def werkstatt_js(use_cache: bool) -> str:
+    """Build the workshop area script from the finished pages of Bauplan- and Wikelo-Planer.
+
+    Args:
+        use_cache: Take the built files from the repos next to this one.
+
+    Returns:
+        JavaScript source of ``bereiche/werkstatt.js``.
+
+    Raises:
+        OSError, ValueError: If a page is unavailable or cannot be split.
+    """
+    tools = {key: split_page(tool_page(key, use_cache), WERKZEUGE[key][2]) for key in WERKZEUGE}
+    sizes = ", ".join(f"{k} {len(v['js']) // 1024} KB Skript" for k, v in tools.items())
+    print(f"  Werkstatt: {sizes}.")
+    return cb.werkstatt_script(tools)
+
+
 def fracht_js(use_cache: bool) -> str:
     """Build the cargo area script with the cargo ledger from the Handels-Planer sources.
 
@@ -250,7 +360,7 @@ def build(make_zip: bool = False, use_cache: bool = False) -> list[Path]:
     """
     scripts = cb.scripts()
     for key, make, what in (("flotte", flotte_js, "Komponenten-Planer"), ("fracht", fracht_js, "Fracht-Logbuch"),
-                            ("pilot", pilot_js, "Ruf und Sitzungen")):
+                            ("pilot", pilot_js, "Ruf und Sitzungen"), ("werkstatt", werkstatt_js, "Werkstatt")):
         try:
             scripts[key] = make(use_cache)
         except (OSError, ValueError, KeyError, ImportError) as e:

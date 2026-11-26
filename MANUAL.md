@@ -9,6 +9,7 @@ The cockpit brings the Star Citizen tools together in one app. It is under const
 - **Fleet:** your ships and the component planner. Here you swap parts and take the shopping list over as reminders.
 - **Cargo:** the cargo ledger with notes and the reminders at their place.
 - **Pilot:** your reputation per organisation and your play sessions.
+- **Workshop:** the blueprint planner and the Wikelo planner.
 - **Other areas:** as long as an area has not moved in, its page shows what the cockpit already knows and leads to the existing tool with **Open** (new tab).
 - **Reminders on the right:** your list to tick off. It stays visible in every area. **Collapse »** turns it into a narrow strip; a click on it opens it again.
 - **Bottom of the sidebar:** language, light/dark, this manual, "What's new?" and the offline package. On phones and tablets they sit under **Settings**.
@@ -61,6 +62,14 @@ You book cargo as in the trade planner: **+ Book cargo in**, click or drag a pos
 5. The **Overview** then shows the reputation (favourites first, then whoever is closest to the next rank) and the last session read.
 
 The detailed manual for reputation and sessions is in the trade planner under "Manual + How-To"; the tabs are the same.
+
+## Workshop: blueprints and Wikelo
+
+1. Open **Workshop**. At the top you switch between **Blueprints** and **Wikelo**.
+2. **Blueprints:** search the catalogue, add blueprints with **+** and enter under "Available resources" what you already have. The procurement list shows what is missing.
+3. **Wikelo:** enter your stock; the offers sort by how much you still lack.
+4. Each planner has its own row with **Manual + How-To** and **What's new?**. That is where the planner's detailed manual is.
+5. Language and light/dark are set in the cockpit; both planners follow.
 
 ## Shared data
 

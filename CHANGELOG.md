@@ -2,6 +2,20 @@
 
 Alle nennenswerten Änderungen an diesem Projekt. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.0.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.6.0] – 2026-11-26
+
+### Hinzugefügt
+- **Werkstatt ist eingezogen.** Der Bereich „Werkstatt“ enthält jetzt den **Bauplan-Planer** und den **Wikelo-Planer** als Unterreiter, in derselben Seite, ohne neuen Tab. Auswahl, Bestand und Fortschritt sind dieselben wie in den einzelnen Tools; dein Stand von dort ist online schon da.
+- Beide folgen Sprache und Hell/Dunkel des Cockpits. Ihre eigene Zeile mit „Anleitung + How-To“, „Was ist neu?“, „Neuesten Stand laden“ und den Werkzeug-Knöpfen bleibt, damit du die Anleitung des jeweiligen Planers zur Hand hast.
+
+### Technik
+- Die beiden Planer sind ganze Seiten aus einer Vorlage. Sie werden nicht umgeschrieben, sondern jede fertige Seite läuft in einem abgeschirmten Bereich (Shadow Root): Stile und Bezeichner bleiben dort, das Skript der Seite arbeitet auf diesem Bereich statt auf dem ganzen Dokument. Der Bau nimmt dafür die veröffentlichte Seite des jeweiligen Tools.
+
+### Bekannt
+- Die Bilder im Bauplan-Planer kommen wie dort aus dem Netz; offline bleiben sie leer.
+- Bei schmalem Fenster richten sich beide Planer nach der Fensterbreite, nicht nach ihrer Spalte. „Einklappen »“ an der Merker-Leiste gibt ihnen mehr Platz.
+- Die Werkstatt steht noch nicht im Lagebild und legt keine Merker an.
+
 ## [0.5.0] – 2026-11-26
 
 ### Hinzugefügt
