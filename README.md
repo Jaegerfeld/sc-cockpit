@@ -8,16 +8,16 @@ One app for my Star Citizen tools: fleet, cargo, workshop, guides and pilot, sha
 
 ## Status
 
-Under construction. State of version 0.3.0:
+Under construction. State of version 0.4.0:
 
 - **Sidebar** with the areas Overview, Fleet, Cargo, Workshop, Guides and Pilot. Each area is loaded on first use.
 - **Reminder rail** on the right, always visible: add your own reminders, tick them off, remove them.
-- **Shared data:** the overview shows what the cockpit already knows from the shared fleet and the cargo ledger (ships, SCU, places with cargo, notes).
+- **Overview as a status board:** "To do" with all open reminders by place (tick them, jump to the place in the ledger), plus fleet, cargo and the last session read.
 - **Fleet has moved in:** component planner with your own fleet; the shopping list can be taken over as reminders, open reminders then follow it by themselves.
 - **Cargo has moved in:** cargo ledger with notes; reminders appear at their place, purchase reminders at the place of their shop.
 - **Other areas as signposts:** workshop, guides and pilot have not moved in yet; their pages lead to the existing tools.
 
-Planned order: overview as a status board, then workshop, pilot and guides, and one backup file for everything.
+Planned order: workshop, pilot and guides, and one backup file for everything.
 
 ## The existing tools
 

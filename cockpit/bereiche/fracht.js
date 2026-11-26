@@ -498,5 +498,8 @@ function start(el){
 }
 // Every draw (language, reminders, fleet) takes over fleet changes and redraws the ledger.
 Cockpit.register('fracht',{render(el){if(!node) start(el); else if(node.parentNode!==el) el.replaceChildren(node);
-  if(LBX){if(LBX.sync) LBX.sync(); LBX.render();}}});
+  if(!LBX) return;
+  // A jump from the overview ("In the ledger"): select that place, found by its id or by the shop text.
+  const it=Cockpit.intent; if(it){Cockpit.intent=null; const loc=it.loc||(LBX.shopPlace?LBX.shopPlace(it.shop):null); if(loc) LBX.openLoc(loc);}
+  if(LBX.sync) LBX.sync(); LBX.render();}});
 })();

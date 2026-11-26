@@ -5,7 +5,7 @@
 Das Cockpit führt die Star-Citizen-Werkzeuge in einer App zusammen. Es ist im Aufbau: Die Bereiche ziehen nach und nach ein.
 
 - **Seitenleiste links:** wechselt zwischen **Übersicht**, **Flotte**, **Fracht**, **Werkstatt**, **Guides** und **Pilot**. Auf schmalen Bildschirmen steht sie als Zeile oben.
-- **Übersicht:** zeigt je Bereich eine Kachel mit dem Stand aus deinen Daten, zum Beispiel die Zahl deiner Schiffe oder die SCU im Fracht-Logbuch.
+- **Übersicht:** dein Lagebild. Oben steht **Zu erledigen** mit allen offenen Merkern nach Ort, darunter Flotte, Fracht und die letzte Sitzung.
 - **Flotte:** deine Schiffe und der Komponenten-Planer. Hier tauschst du Teile und übernimmst die Einkaufsliste als Merker.
 - **Fracht:** das Fracht-Logbuch mit Notizen und den Merkern am Ort.
 - **Übrige Bereiche:** Solange ein Bereich noch nicht eingezogen ist, zeigt seine Seite, was das Cockpit schon weiß, und führt mit **Öffnen** in das bisherige Tool (neuer Tab).
@@ -13,6 +13,14 @@ Das Cockpit führt die Star-Citizen-Werkzeuge in einer App zusammen. Es ist im A
 - **Unten in der Seitenleiste:** Sprache, Hell/Dunkel, diese Anleitung, „Was ist neu?“ und das Offline-Paket. Auf Handy und Tablet stehen sie unter **Einstellungen**.
 
 Alle Daten liegen in deinem Browser. Es gibt kein Konto und keinen Server.
+
+## Übersicht
+
+1. **Zu erledigen** gruppiert die offenen Merker nach Ort und nennt je Ort die Kaufsumme. So siehst du, was du an einer Station alles erledigen kannst.
+2. Setz den Haken direkt in der Übersicht, wenn etwas erledigt ist.
+3. **Im Logbuch →** öffnet den Ort im Fracht-Logbuch, mit Fracht, Merkern und Notiz.
+4. **Flotte** zeigt je Schiff getauschte Teile, Fracht an Bord und offene Merker. **Fracht** zeigt die Summe und die Orte mit der meisten Fracht.
+5. **Letzte Sitzung** zeigt die zuletzt gelesene abgeschlossene Sitzung. Dazu musst du im Handels-Planer unter „Sitzungen“ einmal deinen Log-Ordner gelesen haben.
 
 ## Merker
 

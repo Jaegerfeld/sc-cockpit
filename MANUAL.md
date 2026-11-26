@@ -5,7 +5,7 @@
 The cockpit brings the Star Citizen tools together in one app. It is under construction: the areas move in one by one.
 
 - **Sidebar on the left:** switches between **Overview**, **Fleet**, **Cargo**, **Workshop**, **Guides** and **Pilot**. On narrow screens it is a row at the top.
-- **Overview:** shows one tile per area with the state from your data, for example the number of your ships or the SCU in the cargo ledger.
+- **Overview:** your status board. At the top is **To do** with all open reminders by place, below it fleet, cargo and the last session.
 - **Fleet:** your ships and the component planner. Here you swap parts and take the shopping list over as reminders.
 - **Cargo:** the cargo ledger with notes and the reminders at their place.
 - **Other areas:** as long as an area has not moved in, its page shows what the cockpit already knows and leads to the existing tool with **Open** (new tab).
@@ -13,6 +13,14 @@ The cockpit brings the Star Citizen tools together in one app. It is under const
 - **Bottom of the sidebar:** language, light/dark, this manual, "What's new?" and the offline package. On phones and tablets they sit under **Settings**.
 
 All data stays in your browser. There is no account and no server.
+
+## Overview
+
+1. **To do** groups the open reminders by place and gives the purchase total per place. That shows what you can get done at one station.
+2. Tick a reminder right in the overview when it is done.
+3. **In the ledger →** opens the place in the cargo ledger, with cargo, reminders and note.
+4. **Fleet** shows swapped parts, cargo aboard and open reminders per ship. **Cargo** shows the total and the places holding the most.
+5. **Last session** shows the last finished session that was read. For that you must have read your log folder once under "Sessions" in the trade planner.
 
 ## Reminders
 
