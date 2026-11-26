@@ -2,6 +2,18 @@
 
 Alle nennenswerten Änderungen an diesem Projekt. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.0.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.8.0] – 2026-11-26
+
+### Hinzugefügt
+- **Sicherungsdatei für alles.** „Sicherung …“ in den Einstellungen speichert eine Datei mit allem, was du angelegt hast: Flotte, Bestückungen, Merker, Fracht-Logbuch mit Notizen, Ruf-Abgleiche, Auswahl und Bestand von Bauplan- und Wikelo-Planer, Merkliste des Schiffskaufs. Damit nimmst du deine Daten mit: ins Offline-Paket, auf einen zweiten Rechner oder in einen anderen Browser.
+- **Einlesen mit Vergleich.** Vor dem Übernehmen zeigt der Dialog je Bereich, was jetzt im Browser steht und was in der Datei; Unterschiede sind hervorgehoben. Übernehmen ersetzt den Stand in allen Bereichen.
+- **Rückweg.** Der Stand vor dem Einlesen bleibt im Browser liegen; „Stand vor dem Einlesen wiederherstellen“ holt ihn zurück. Reicht der Browser-Speicher dafür nicht, speichert das Cockpit ihn stattdessen als Datei.
+
+### Bekannt
+- Nicht gesichert werden Preisdaten und gelesene Sitzungen (lassen sich neu laden; die Sitzungen enthalten Server-Adressen aus den Spiel-Logs) sowie Sprache und Hell/Dunkel (gehören zum Gerät).
+- Die Sicherung ist ein Speichern und Einlesen von Hand. Die Speicherdatei des Fracht-Logbuchs, die sich von selbst mitschreibt, bleibt davon getrennt.
+- Haben beim Einlesen andere Tabs das Cockpit oder einen Planer offen, können sie den alten Stand wieder zurückschreiben. Schließ sie vorher.
+
 ## [0.7.0] – 2026-11-26
 
 ### Hinzugefügt

@@ -86,10 +86,21 @@ The guides need an internet connection, even when you start the cockpit from the
 - The cargo ledger is the same as in the trade planner. What you book here is there, and the other way round. If it is open in two tabs, each takes over the other's state as soon as that one saves.
 - Online the cockpit shares fleet and loadouts with the ship purchase planner: what you built there is here, and the other way round.
 - Reminders, language and light/dark are stored by the cockpit itself.
-- If you clear your browser's site data, this data is gone as well.
+- If you clear your browser's site data, this data is gone as well. A **backup** keeps it as a file.
+
+## Backup
+
+1. Click **Backup …** at the bottom of the sidebar (on phones and tablets under **Settings**). The dialog shows what is in this browser now.
+2. **Save backup** puts a file `SC_Cockpit_Sicherung_….json` into your download folder.
+3. To carry your data along, open the cockpit at the other place (offline package, second computer, another browser), click **Backup …** and **Load backup …** and pick the file.
+4. The dialog compares what is in the browser now with what is in the file. Differences are highlighted.
+5. **Take over this state** replaces the state in all areas with the file. What the file does not contain is empty afterwards. Close other tabs with the cockpit or the planners first.
+6. After loading, the same dialog offers **Restore the state before the import**. That is one way back for the last import.
+
+Not in the backup: price data and sessions read (you load those again) and language and light/dark.
 
 ## Offline use
 
 1. Click **Offline package** at the bottom of the sidebar and unpack the ZIP file.
 2. In the `SC_Cockpit` folder, open `SC_Cockpit.html` with a double click. The `bereiche` folder must stay next to it.
-3. The offline copy has its own data. It does not see the data of the online version. A shared backup file to carry data across follows in a later version.
+3. The offline copy has its own data. It does not see the data of the online version. With the **backup** you carry your state across (see "Backup").

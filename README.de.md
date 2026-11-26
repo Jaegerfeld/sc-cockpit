@@ -8,7 +8,7 @@ Eine App für meine Star-Citizen-Werkzeuge: Flotte, Fracht, Werkstatt, Guides un
 
 ## Stand
 
-Stand Version 0.7.0, alle sechs Bereiche sind eingezogen:
+Stand Version 0.8.0, alle sechs Bereiche sind eingezogen:
 
 - **Seitenleiste** mit den Bereichen Übersicht, Flotte, Fracht, Werkstatt, Guides und Pilot. Jeder Bereich wird beim ersten Öffnen geladen.
 - **Merker-Leiste** rechts, immer sichtbar: eigene Merker anlegen, abhaken, entfernen.
@@ -20,7 +20,9 @@ Stand Version 0.7.0, alle sechs Bereiche sind eingezogen:
 - **Guides sind eingezogen:** Übersicht aller Feldhandbücher und Flyer; ein Guide öffnet sich im Cockpit in einem Leserahmen.
 - **Noch als Verweis:** Routen und Warenlisten, Schiffskauf und Screenshot-Auswerter (am Fuß von Fracht und Flotte).
 
-Als Nächstes: eine Sicherungsdatei für alles; danach Routen, Schiffskauf und Auswerter.
+- **Sicherungsdatei für alles:** speichern, einlesen mit Vergleich vorher/nachher, ein Rückweg. Sie trägt die Daten ins Offline-Paket oder auf einen zweiten Rechner.
+
+Als Nächstes: Routen, Schiffskauf und Auswerter.
 
 ## Die bisherigen Tools
 
@@ -47,6 +49,7 @@ python cockpit_bauen.py --cache  # nimmt die lokalen Zwischenspeicher des Schiff
 |---|---|
 | `cockpit_seite.py` | Hülle: Seitenvorlage, Stile, Navigation, Nachladen der Bereiche, Merker-Leiste |
 | `cockpit_daten.py` | Gemeinsame Daten `SCData`: Merker, lesender Blick auf Flotte und Fracht-Logbuch |
+| `cockpit_sicherung.py` | Sicherungsdatei `SCBackup`: welche Speicher-Schlüssel dazugehören, sammeln, prüfen, übernehmen, Rückweg |
 | `cockpit_bereiche.py` | Die Bereiche; jeder wird zu `bereiche/<schlüssel>.js`. Die Flotte hängt den Komponenten-Planer aus dem Schiffskauf-Repo ein, Fracht und Pilot das Logbuch, den Ruf und die Sitzungen aus dem Handels-Repo, die Werkstatt Bauplan- und Wikelo-Planer in je einem Shadow Root |
 | `flotte.py`, `kopfzeile.py`, `sc_design.py` | Gemeinsam mit den anderen Tools, byte-gleiche Kopien |
 
