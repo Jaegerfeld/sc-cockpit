@@ -22,6 +22,11 @@
 #   --cache nimmt er dessen lokale Zwischenspeicher. Klappt das nicht, baut er
 #   die Flotte als Wegweiser und meldet es, statt abzubrechen.
 #
+#   Genauso der Bereich Fracht: Das Fracht-Logbuch kommt aus dem Repo
+#   StarCitizen-Handels-Planer (SC_HANDEL, _handel, Nachbarordner), seine
+#   Stammdaten (Orte, Waren, Schiffe mit Laderaum) von UEX. Der Ordner
+#   eigene_daten des Handels-Planers wird dabei nie gelesen.
+#
 #   kopfzeile.py kennt das Cockpit noch nicht (die Datei liegt byte-gleich in
 #   den fünf Tool-Repos). Deshalb setzt der Bau den Changelog-Link des
 #   „Was ist neu?“-Dialogs hier auf dieses Repo, statt kopfzeile.py zu ändern.
@@ -86,7 +91,8 @@ def page() -> str:
         ("<!--CK_OFFLINE-->", kz.bi("Offline-Paket", "Offline package")),
         ("<!--CK_MERKER-->", kz.bi("Merker", "Reminders")), ("<!--CK_MNEW-->", kz.bi("Neuer Merker", "New reminder")),
         ("<!--CK_MADD-->", kz.bi("Hinzufügen", "Add")), ("<!--CK_MSHIP-->", kz.bi("Schiff (optional)", "Ship (optional)")),
-        ("<!--CK_SETSUM-->", "⚙ " + kz.bi("Einstellungen", "Settings")), ("<!--FH_DIALOG-->", dialog), ("/*CK_JS*/", js),
+        ("<!--CK_SETSUM-->", "⚙ " + kz.bi("Einstellungen", "Settings")),
+        ("<!--CK_RAILOFF-->", kz.bi("Einklappen", "Collapse")), ("<!--CK_RAILON-->", kz.bi("Merker", "Reminders")), ("<!--FH_DIALOG-->", dialog), ("/*CK_JS*/", js),
     ]:
         if html.count(mark) != 1:
             raise ValueError(f"Platzhalter {mark} fehlt oder ist doppelt")
@@ -94,12 +100,54 @@ def page() -> str:
     return html
 
 
-def schiffskauf_dir() -> Path | None:
-    """Find the StarCitizen-Schiffskauf-Planer sources (see the header for the search order)."""
-    for c in (os.environ.get("SC_SCHIFFSKAUF"), HERE / "_schiffskauf", HERE.parent / "StarCitizen-Schiffskauf-Planer"):
-        if c and (Path(c) / "komponenten_seite.py").exists():
+def source_dir(env: str, folder: str, repo: str, probe: str) -> Path | None:
+    """Find the sources of a tool that lends an area to the cockpit.
+
+    Args:
+        env: Environment variable that may name the folder.
+        folder: Folder inside this repo where the workflow checks the tool out.
+        repo: Name of the tool's repo, looked for next to this repo.
+        probe: A file that must exist in the folder.
+
+    Returns:
+        The folder, or None if the tool is not there.
+    """
+    for c in (os.environ.get(env), HERE / folder, HERE.parent / repo):
+        if c and (Path(c) / probe).exists():
             return Path(c)
     return None
+
+
+def schiffskauf_dir() -> Path | None:
+    """Find the StarCitizen-Schiffskauf-Planer sources (see the header for the search order)."""
+    return source_dir("SC_SCHIFFSKAUF", "_schiffskauf", "StarCitizen-Schiffskauf-Planer", "komponenten_seite.py")
+
+
+def fracht_js(use_cache: bool) -> str:
+    """Build the cargo area script with the cargo ledger from the Handels-Planer sources.
+
+    Args:
+        use_cache: Use that repo's ``logbuch_cache.json`` instead of calling UEX.
+
+    Returns:
+        JavaScript source of ``bereiche/fracht.js``.
+
+    Raises:
+        OSError, ValueError, KeyError, ImportError: If the sources or the data are unavailable.
+    """
+    src = source_dir("SC_HANDEL", "_handel", "StarCitizen-Handels-Planer", "logbuch_seite.py")
+    if not src:
+        raise ImportError("Quelle StarCitizen-Handels-Planer nicht gefunden")
+    if str(src) not in sys.path:
+        sys.path.append(str(src))
+    daten = importlib.import_module("logbuch_daten")
+    seite = importlib.import_module("logbuch_seite")
+    data = daten.build(use_cache=use_cache)
+    if not data.get("places"):
+        raise ValueError("Logbuch-Stammdaten ohne Orte")
+    payload = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+    print(f"  Fracht: {len(data['places'])} Orte, {len(data['wares'])} Waren, {len(data['ships'])} Schiffe mit Laderaum.")
+    return cb.fracht_script(seite.LB_HTML, seite.LB_CSS, seite.LB_JS.replace("/*__LB__*/null", payload))
 
 
 def flotte_js(use_cache: bool) -> str:
@@ -145,7 +193,7 @@ def build(make_zip: bool = False, use_cache: bool = False) -> list[Path]:
 
     Args:
         make_zip: Also write ``SC_Cockpit_Offline.zip`` next to the output folder.
-        use_cache: Build the fleet area from the local caches of the Schiffskauf-Planer.
+        use_cache: Build the fleet and cargo areas from the local caches of the lending tools.
 
     Returns:
         The files written.
@@ -154,10 +202,11 @@ def build(make_zip: bool = False, use_cache: bool = False) -> list[Path]:
         ValueError: If a sidebar area has no script, a script has no area, or a template mark is wrong.
     """
     scripts = cb.scripts()
-    try:
-        scripts["flotte"] = flotte_js(use_cache)
-    except (OSError, ValueError, KeyError, ImportError) as e:
-        print(f"  WARNUNG: Komponenten-Planer nicht gebaut ({e}); die Flotte bleibt ein Wegweiser.", file=sys.stderr)
+    for key, make, what in (("flotte", flotte_js, "Komponenten-Planer"), ("fracht", fracht_js, "Fracht-Logbuch")):
+        try:
+            scripts[key] = make(use_cache)
+        except (OSError, ValueError, KeyError, ImportError) as e:
+            print(f"  WARNUNG: {what} nicht gebaut ({e}); der Bereich bleibt ein Wegweiser.", file=sys.stderr)
     keys = [k for k, *_ in cs.AREAS]
     if sorted(scripts) != sorted(keys):
         raise ValueError(f"Bereiche und Seitenleiste passen nicht zusammen: {sorted(scripts)} / {sorted(keys)}")

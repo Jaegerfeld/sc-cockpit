@@ -18,11 +18,13 @@
 #
 #   Seit 0.2.0 ist die Flotte eingezogen: FLOTTE_JS hängt den Komponenten-
 #   Planer ein. Dessen Quelle bleibt im Repo StarCitizen-Schiffskauf-Planer
-#   (eine Stelle für neue Schiffe), der Bau holt sie von dort. Ist sie beim
-#   Bau nicht erreichbar, bleibt für die Flotte der Wegweiser aus BEREICHE.
+#   (eine Stelle für neue Schiffe), der Bau holt sie von dort. Seit 0.3.0
+#   hängt FRACHT_JS genauso das Fracht-Logbuch aus dem Repo
+#   StarCitizen-Handels-Planer ein. Ist eine Quelle beim Bau nicht
+#   erreichbar, bleibt für den Bereich der Wegweiser aus BEREICHE.
 #
-#   Reihenfolge des weiteren Umzugs: Fracht, Übersicht als Lagebild, danach
-#   Werkstatt, Pilot und Guides.
+#   Reihenfolge des weiteren Umzugs: Übersicht als Lagebild, danach
+#   Werkstatt, Pilot und Guides; Routen und Waren folgen dem Logbuch.
 # =============================================================================
 """Area scripts of the cockpit; each becomes its own lazily loaded file under bereiche/."""
 from __future__ import annotations
@@ -72,7 +74,7 @@ Cockpit.register('flotte',{render(el){const C=Cockpit, s=SCData.summary();
     note:['Die Flotte ist schon gemeinsam: Schiffe, die du im Schiffskauf-Planer oder im Fracht-Logbuch anlegst, zählt das Cockpit online mit.','The fleet is already shared: online the cockpit counts the ships you add in the ship purchase planner or the cargo ledger.']});}});
 """,
     "fracht": r"""
-/* ---------- cargo (not moved in yet) ---------- */
+/* ---------- cargo: fallback when the cargo ledger could not be built ---------- */
 Cockpit.register('fracht',{render(el){const C=Cockpit, s=SCData.summary();
   C.placeholder(el,{title:['Fracht','Cargo'],
     lede:['Das Fracht-Logbuch mit Notizen je Ort und Schiff, Handelsrouten, Warenlisten und der Screenshot-Auswerter für Handelskonsolen.','The cargo ledger with notes per place and ship, trade routes, commodity lists and the screenshot reader for trade consoles.'],
@@ -80,7 +82,7 @@ Cockpit.register('fracht',{render(el){const C=Cockpit, s=SCData.summary();
       C.fact(s.notes,s.notes===1?'Notiz':'Notizen',s.notes===1?'note':'notes'),C.fact(s.cargoShips,s.cargoShips===1?'Frachtschiff':'Frachtschiffe',s.cargoShips===1?'cargo ship':'cargo ships')],
     tools:[{ico:'📈',name:['Handels-Planer','Trade planner'],what:['Fracht-Logbuch mit Notizen, Routen, alle Waren, Kauf- und Verkaufsorte.','Cargo ledger with notes, routes, all commodities, buy and sell places.'],url:'__handel__'},
       {ico:'📷',name:['Screenshot-Auswerter','Screenshot reader'],what:['Liest Preise aus Screenshots der Handelskonsolen.','Reads prices from screenshots of the trade consoles.'],url:'__auswerter__'}],
-    note:['Das Cockpit liest das Logbuch nur. Buchungen und Notizen schreibst du weiter im Handels-Planer, bis das Logbuch hier eingezogen ist.','The cockpit only reads the ledger. You keep booking and writing notes in the trade planner until the ledger has moved in here.']});}});
+    note:['Die Daten des Fracht-Logbuchs waren beim letzten Bau nicht erreichbar; der nächste Bau holt sie neu. Bis dahin führst du das Logbuch im Handels-Planer.','The cargo ledger data was unavailable at the last build; the next build fetches it again. Until then keep the ledger in the trade planner.']});}});
 """,
     "werkstatt": r"""
 /* ---------- workshop (not moved in yet) ---------- */
@@ -176,6 +178,75 @@ def flotte_script(kp_html: str, kp_css: str, kp_js: str) -> str:
                         ("/*KP_JS*/", kp_js), ("__schiffskauf__", URL["schiffskauf"])]:
         if js.count(mark) != 1:
             raise ValueError(f"Marke {mark} fehlt in der Flotten-Vorlage")
+        js = js.replace(mark, value)
+    return js.strip() + "\n"
+
+
+#: Cargo area with the cargo ledger. The ledger itself (markup, styles, script, master data) comes from
+#: the StarCitizen-Handels-Planer sources at build time; this wrapper stands in for its page: the toast,
+#: the view switch (not needed here) and a place in the document.
+FRACHT_JS = r"""
+/* ---------- cargo: the cargo ledger with notes and reminders (source: StarCitizen-Handels-Planer) ---------- */
+(function(){
+// The ledger binds its handlers to its own elements once, so its node is built once and re-attached.
+let node=null, LBX=null;
+const HEAD=`<h1><span class="de">Fracht</span><span class="en">Cargo</span></h1>
+  <p class="ck-lede"><span class="de">Dein Fracht-Logbuch: was wo liegt, Notizen je Ort und Schiff, und was dort zu erledigen ist. Kaufmerker aus der Flotte erscheinen am Ort ihres Händlers.</span><span class="en">Your cargo ledger: what is where, notes per place and ship, and what there is to do. Purchase reminders from the fleet appear at the place of their shop.</span></p>`;
+const FOOT=`<h2 class="ck-h2"><span class="de">Noch im bisherigen Tool</span><span class="en">Still in the existing tool</span></h2>
+  <div class="ck-tools"><div class="ck-tool"><b><span aria-hidden="true">📈</span> <span class="de">Handels-Planer</span><span class="en">Trade planner</span></b>
+    <p><span class="de">Routen, alle Waren, Kauf- und Verkaufsorte, „Aufs Handy“. Dort nennt das Logbuch auch den besten Verkaufsort je Ware.</span><span class="en">Routes, all commodities, buy and sell places, “To the phone”. There the ledger also names the best sell place per commodity.</span></p>
+    <a class="btn" href="__handel__" target="_blank" rel="noopener"><span class="de">Öffnen</span><span class="en">Open</span> <span aria-hidden="true">↗</span><span class="ck-sr"> (<span class="de">neuer Tab</span><span class="en">new tab</span>)</span></a></div>
+  <div class="ck-tool"><b><span aria-hidden="true">📷</span> <span class="de">Screenshot-Auswerter</span><span class="en">Screenshot reader</span></b>
+    <p><span class="de">Liest Preise aus Screenshots der Handelskonsolen.</span><span class="en">Reads prices from screenshots of the trade consoles.</span></p>
+    <a class="btn" href="__auswerter__" target="_blank" rel="noopener"><span class="de">Öffnen</span><span class="en">Open</span> <span aria-hidden="true">↗</span><span class="ck-sr"> (<span class="de">neuer Tab</span><span class="en">new tab</span>)</span></a></div></div>`;
+// What the ledger expects from its page.
+function toast(m){Cockpit.toast(m);}
+function showView(){}
+function boot(){
+/*LB_JS*/
+return LB;
+}
+// The ledger's columns follow its own width here (inside the cockpit its column is narrower than the window).
+const CSS_HOST=`
+  .ck-lb #view-ledger{display:block}
+  .ck-lb.midw #view-ledger .lb-grid{grid-template-columns:210px minmax(0,1fr) 230px}
+  .ck-lb.narrow #view-ledger .lb-grid{grid-template-columns:minmax(0,1fr)}
+  .ck-lb.narrow #view-ledger .lb-mid{order:-1}`;
+function start(el){
+  const st=document.createElement('style'); st.textContent=/*LB_CSS*/''+CSS_HOST; document.head.appendChild(st);
+  node=document.createElement('div'); node.className='ck-lb'; node.innerHTML=HEAD+/*LB_HTML*/''+FOOT;
+  el.replaceChildren(node);
+  node.querySelector('#view-ledger').classList.remove('hide');
+  LBX=boot();
+  new ResizeObserver(()=>{const w=node.clientWidth; if(!w) return; node.classList.toggle('narrow',w<720); node.classList.toggle('midw',w<980);}).observe(node);
+}
+// Every draw (language, reminders, fleet) takes over fleet changes and redraws the ledger.
+Cockpit.register('fracht',{render(el){if(!node) start(el); else if(node.parentNode!==el) el.replaceChildren(node);
+  if(LBX){if(LBX.sync) LBX.sync(); LBX.render();}}});
+})();
+"""
+
+
+def fracht_script(lb_html: str, lb_css: str, lb_js: str) -> str:
+    """Return the cargo area script with the cargo ledger built in.
+
+    Args:
+        lb_html: Panel markup of the ledger (``LB_HTML`` of the Handels-Planer).
+        lb_css: Its styles (``LB_CSS``).
+        lb_js: Its script with the master data already inserted (``LB_JS``).
+
+    Returns:
+        JavaScript source of ``bereiche/fracht.js``.
+
+    Raises:
+        ValueError: If a mark of the template is missing.
+    """
+    js = FRACHT_JS
+    for mark, value in [("/*LB_CSS*/''", json.dumps(lb_css, ensure_ascii=False)),
+                        ("/*LB_HTML*/''", json.dumps(lb_html, ensure_ascii=False)),
+                        ("/*LB_JS*/", lb_js), ("__handel__", URL["handel"]), ("__auswerter__", URL["auswerter"])]:
+        if js.count(mark) != 1:
+            raise ValueError(f"Marke {mark} fehlt in der Fracht-Vorlage")
         js = js.replace(mark, value)
     return js.strip() + "\n"
 

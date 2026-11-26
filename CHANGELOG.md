@@ -2,6 +2,17 @@
 
 Alle nennenswerten Änderungen an diesem Projekt. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.0.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.3.0] – 2026-11-26
+
+### Hinzugefügt
+- **Fracht ist eingezogen.** Der Bereich „Fracht“ enthält jetzt das Fracht-Logbuch: Fracht einbuchen und verschieben, Schiffe mit Laderaum, Notizen je Ort und Schiff, Suche, Export und Speicherdatei. Es ist dasselbe Logbuch wie im Handels-Planer; dein Stand von dort ist online schon da.
+- **Merker am Ort.** Ein gewählter Ort zeigt unter „Hier zu erledigen“ die offenen Merker, die dorthin gehören. Kaufmerker aus der Flotte landen am Ort ihres Händlers, mit Schiff, Händler und Preis. Du hakst sie dort ab und legst neue Merker für den Ort oder das Schiff an. Orte mit Merkern tragen in der Liste „☑ n Merker“.
+- **Merker-Leiste einklappen.** „Einklappen »“ macht die Leiste zu einem schmalen Streifen mit der Zahl der offenen Merker und gibt dem Bereich mehr Platz; das Cockpit merkt sich die Wahl.
+
+### Bekannt
+- Den besten Verkaufsort je Ware nennt das Logbuch im Cockpit noch nicht (nur den UEX-Durchschnittspreis); das kommt mit den Routen. „Aufs Handy“ gibt es vorerst nur im Handels-Planer.
+- Drei Händler lassen sich noch keinem Ort zuordnen (zwei in GrimHEX, einer in Kabir’s Post); ihre Merker stehen nur in der Leiste.
+
 ## [0.2.0] – 2026-11-26
 
 ### Hinzugefügt

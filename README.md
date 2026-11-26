@@ -8,15 +8,16 @@ One app for my Star Citizen tools: fleet, cargo, workshop, guides and pilot, sha
 
 ## Status
 
-Under construction. State of version 0.2.0:
+Under construction. State of version 0.3.0:
 
 - **Sidebar** with the areas Overview, Fleet, Cargo, Workshop, Guides and Pilot. Each area is loaded on first use.
 - **Reminder rail** on the right, always visible: add your own reminders, tick them off, remove them.
 - **Shared data:** the overview shows what the cockpit already knows from the shared fleet and the cargo ledger (ships, SCU, places with cargo, notes).
 - **Fleet has moved in:** component planner with your own fleet; the shopping list can be taken over as reminders, open reminders then follow it by themselves.
-- **Other areas as signposts:** cargo, workshop, guides and pilot have not moved in yet; their pages lead to the existing tools.
+- **Cargo has moved in:** cargo ledger with notes; reminders appear at their place, purchase reminders at the place of their shop.
+- **Other areas as signposts:** workshop, guides and pilot have not moved in yet; their pages lead to the existing tools.
 
-Planned order: cargo ledger, overview as a status board, then workshop, pilot and guides, and one backup file for everything.
+Planned order: overview as a status board, then workshop, pilot and guides, and one backup file for everything.
 
 ## The existing tools
 
@@ -31,7 +32,7 @@ Online all of them live under the same address (`jaegerfeld.github.io`) and ther
 
 ## Build
 
-Standard library only. The fleet area needs the source of the component planner: the repo [StarCitizen-Schiffskauf-Planer](https://github.com/Jaegerfeld/StarCitizen-Schiffskauf-Planer) next to this repo (or its path in `SC_SCHIFFSKAUF`). Without it or without network the script builds the fleet as a signpost.
+Standard library only. The fleet area needs the source of the component planner: the repo [StarCitizen-Schiffskauf-Planer](https://github.com/Jaegerfeld/StarCitizen-Schiffskauf-Planer) next to this repo (or its path in `SC_SCHIFFSKAUF`). The cargo area needs the repo [StarCitizen-Handels-Planer](https://github.com/Jaegerfeld/StarCitizen-Handels-Planer) in the same way (`SC_HANDEL`). Without a source or without network the script builds the area as a signpost.
 
 ```bash
 python cockpit_bauen.py          # writes cockpit/SC_Cockpit.html and cockpit/bereiche/*.js
@@ -43,14 +44,14 @@ python cockpit_bauen.py --cache  # uses the local caches of the Schiffskauf-Plan
 |---|---|
 | `cockpit_seite.py` | Shell: page template, styles, navigation, lazy loading of areas, reminder rail |
 | `cockpit_daten.py` | Shared data `SCData`: reminders, read-only view on fleet and cargo ledger |
-| `cockpit_bereiche.py` | The areas; each becomes `bereiche/<key>.js`. The fleet mounts the component planner from the Schiffskauf repo |
+| `cockpit_bereiche.py` | The areas; each becomes `bereiche/<key>.js`. The fleet mounts the component planner from the Schiffskauf repo, cargo the ledger from the Handels repo |
 | `flotte.py`, `kopfzeile.py`, `sc_design.py` | Shared with the other tools, byte-identical copies |
 
 Areas are loaded with a `<script>` element, not `fetch()`, so the page also runs from a folder on disk.
 
 ## Data and privacy
 
-Everything is stored in your browser (`localStorage`): reminders (`sc_merker_v1`), language and theme (`sc_cockpit_ui`), the shared fleet (`sc_flotte_v1`) and, read-only, the cargo ledger (`scha_ledger_v1`). Plus the loadouts of the component planner (`scsk_kp`). Nothing is sent anywhere. The page loads two fonts from Google Fonts; without a connection it uses system fonts.
+Everything is stored in your browser (`localStorage`): reminders (`sc_merker_v1`), language and theme (`sc_cockpit_ui`), the shared fleet (`sc_flotte_v1`) and the cargo ledger (`scha_ledger_v1`). Plus the loadouts of the component planner (`scsk_kp`). Nothing is sent anywhere. The page loads two fonts from Google Fonts; without a connection it uses system fonts.
 
 ## Notes
 

@@ -71,13 +71,17 @@ TEMPLATE = r"""<!DOCTYPE html>
   </aside>
   <main class="ck-main" id="ck-main" aria-live="polite"></main>
   <aside class="ck-rail" id="ck-rail" aria-labelledby="ck-mh">
-    <h2 id="ck-mh"><!--CK_MERKER--> <span class="ck-n" id="ck-mn"></span></h2>
+    <button type="button" class="ck-railon" id="ck-railon" aria-expanded="false" aria-controls="ck-railbody" hidden><span aria-hidden="true">☑</span> <!--CK_RAILON--> <span class="ck-n" id="ck-mn2"></span></button>
+    <div id="ck-railbody">
+    <div class="ck-railhead"><h2 id="ck-mh"><!--CK_MERKER--> <span class="ck-n" id="ck-mn"></span></h2>
+      <button type="button" class="btn ck-railoff" id="ck-railoff" aria-expanded="true" aria-controls="ck-railbody"><!--CK_RAILOFF--> <span aria-hidden="true">»</span></button></div>
     <form id="ck-madd" autocomplete="off">
       <label for="ck-mtext"><!--CK_MNEW--></label>
       <div class="ck-row"><input type="text" id="ck-mtext" maxlength="200"><button class="btn pri" type="submit"><!--CK_MADD--></button></div>
       <div class="ck-mshipw" id="ck-mshipw" hidden><label for="ck-mship"><!--CK_MSHIP--></label><select id="ck-mship"></select></div>
     </form>
     <div id="ck-mlist"></div>
+    </div>
   </aside>
 </div>
 <div class="ck-toast" id="ck-toast" role="status" aria-live="polite" hidden></div>
@@ -116,7 +120,16 @@ CSS = r"""
 .ck-state{padding:30px 4px;color:var(--muted)}
 .ck-state .btn{margin-top:10px;min-height:44px}
 .ck-rail{position:sticky;top:0;height:calc(100vh - 5px);overflow:auto;padding:16px 14px;border-left:1px solid var(--line);background:var(--panel)}
-.ck-rail h2{font-family:var(--disp);font-size:19px;margin:0 0 10px}
+.ck-rail h2{font-family:var(--disp);font-size:19px;margin:0}
+.ck-railhead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 10px}
+.ck-railoff{min-height:36px;padding:4px 10px;font-size:13px}
+/* Collapsed rail: a narrow strip with one button that names what it opens and how much is open. */
+.ck-railon{writing-mode:vertical-rl;min-height:140px;width:40px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--ink);font-family:var(--disp);font-weight:700;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.ck-railon[hidden]{display:none}
+.ck-railon:hover{border-color:var(--accent);color:var(--accent)}
+body.ck-norail .ck{grid-template-columns:220px minmax(0,1fr) 62px}
+body.ck-norail .ck-rail{padding:16px 10px}
+body.ck-norail #ck-railbody{display:none}
 .ck-n{font-size:13px;color:var(--muted);font-weight:600}
 .ck-rail label[for]{display:block;font-size:12.5px;color:var(--muted);margin-bottom:3px}
 .ck-row{display:flex;gap:6px}
@@ -153,9 +166,12 @@ a.ck-tile:hover{border-color:var(--accent)}
 .ck-tool p{margin:0;color:var(--muted);font-size:14px;flex:1}
 .ck-tool .btn{align-self:flex-start;min-height:44px;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
 .ck-note{color:var(--muted);font-size:14px;max-width:75ch;margin:18px 0 0;border-left:3px solid var(--accent2);padding-left:12px}
-@media (max-width:1560px){.ck{grid-template-columns:200px minmax(0,1fr) 260px}.ck-main{padding:18px 18px 50px}}
+@media (max-width:1560px){.ck{grid-template-columns:200px minmax(0,1fr) 260px}.ck-main{padding:18px 18px 50px}
+  body.ck-norail .ck{grid-template-columns:200px minmax(0,1fr) 62px}}
 @media (max-width:919px){
-  .ck{grid-template-columns:minmax(0,1fr);min-height:0;align-content:start}
+  .ck,body.ck-norail .ck{grid-template-columns:minmax(0,1fr);min-height:0;align-content:start}
+  /* Stacked layout: the rail is below the content anyway, so it never collapses here. */
+  body.ck-norail #ck-railbody{display:block} .ck-railon,.ck-railoff{display:none!important}
   .ck-side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:12px;gap:10px}
   .ck-nav{flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:4px}
   .ck-nav a{flex:none;border-left-width:1px;border-bottom:4px solid transparent;padding:0 12px;font-size:16px}
@@ -254,6 +270,7 @@ function itemHtml(m){const mt=meta(m);
     ${mt?`<small>${mt}</small>`:''}</li>`;}
 function drawRail(){const all=SCData.items(), open=all.filter(m=>!m.done), done=all.filter(m=>m.done), was=$('ck-mdone')?.open;
   $('ck-mn').textContent=open.length?`(${open.length} ${T('offen','open')})`:'';
+  $('ck-mn2').textContent=open.length?`(${open.length})`:'';
   // Optional ship for a new reminder, offered once the fleet has ships.
   const fleet=window.SCFleet?SCFleet.read().ships:[], sel=$('ck-mship'), was2=sel.value;
   $('ck-mshipw').hidden=!fleet.length;
@@ -282,6 +299,11 @@ function redraw(){$('ck-mtext').placeholder=T('z. B. Hull B bei Area18 abholen',
 SCData.onChange(()=>{draw(); drawRail();});
 // Fleet changes made in this page (component planner) do not raise a storage event; pass them on.
 if(window.SCFleet) for(const k of ['upsert','upsertMany','remove']){const f=SCFleet[k]; SCFleet[k]=(...a)=>{const r=f(...a); SCData.touch(); return r;};}
+// Collapse the reminder rail to give an area more room; the choice is remembered.
+function rail(off){document.body.classList.toggle('ck-norail',off); $('ck-railon').hidden=!off; $('ck-railoff').setAttribute('aria-expanded',String(!off));}
+$('ck-railoff').addEventListener('click',()=>{rail(true); ui({norail:true}); $('ck-railon').focus();});
+$('ck-railon').addEventListener('click',()=>{rail(false); ui({norail:false}); $('ck-mtext').focus();});
+if(ui().norail) rail(true);
 // Narrow screens start with the settings folded.
 if(matchMedia('(max-width:919px)').matches) $('ck-setd').removeAttribute('open');
 

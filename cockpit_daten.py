@@ -20,9 +20,9 @@
 #   Die Flotte kommt aus flotte.py (Schlüssel ``sc_flotte_v1``), Fracht und
 #   Notizen aus dem Fracht-Logbuch des Handels-Planers (``scha_ledger_v1``).
 #   Online liegen alle Tools unter derselben Adresse und teilen sich deshalb
-#   diesen Speicher schon. Das Logbuch wird hier nur gelesen: Solange es noch
-#   als eigene Seite läuft, würde ein zweiter Schreiber dessen Stand
-#   überschreiben. Geschrieben wird es erst, wenn es ins Cockpit eingezogen ist.
+#   diesen Speicher schon. Dieses Modul liest das Logbuch nur (für die
+#   Übersicht); geschrieben wird es vom Logbuch selbst, das seit 0.3.0 im
+#   Bereich Fracht läuft und Änderungen aus anderen Tabs übernimmt.
 # =============================================================================
 """Shared cockpit data: reminders ("Merker") plus a read-only view on fleet and cargo ledger."""
 from __future__ import annotations

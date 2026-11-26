@@ -7,8 +7,9 @@ The cockpit brings the Star Citizen tools together in one app. It is under const
 - **Sidebar on the left:** switches between **Overview**, **Fleet**, **Cargo**, **Workshop**, **Guides** and **Pilot**. On narrow screens it is a row at the top.
 - **Overview:** shows one tile per area with the state from your data, for example the number of your ships or the SCU in the cargo ledger.
 - **Fleet:** your ships and the component planner. Here you swap parts and take the shopping list over as reminders.
+- **Cargo:** the cargo ledger with notes and the reminders at their place.
 - **Other areas:** as long as an area has not moved in, its page shows what the cockpit already knows and leads to the existing tool with **Open** (new tab).
-- **Reminders on the right:** your list to tick off. It stays visible in every area.
+- **Reminders on the right:** your list to tick off. It stays visible in every area. **Collapse »** turns it into a narrow strip; a click on it opens it again.
 - **Bottom of the sidebar:** language, light/dark, this manual, "What's new?" and the offline package. On phones and tablets they sit under **Settings**.
 
 All data stays in your browser. There is no account and no server.
@@ -32,10 +33,20 @@ Reminders marked "automatic" come from the shopping list of a ship (see "Fleet a
 
 Reminders are kept for ships of your fleet only. Add a ship in preview with **+ add to my ships** first.
 
+## Cargo and reminders at their place
+
+1. Open **Cargo**. On the left are your ships with cargo space, on the right the places, in the middle the selected place or ship.
+2. Pick a place. **To do here** lists the open reminders for this place, for example a purchase reminder from the fleet with ship, shop and price. Tick it when it is done.
+3. Under **New reminder for this place** you add your own reminder tied to this place. For a ship the field is called **New reminder for this ship**.
+4. Places and ships with open reminders carry **☑ n reminders** in the lists. The filter **with cargo or a note only** includes them.
+5. Below that is the **Notes** field for free text, as before.
+
+You book cargo as in the trade planner: **+ Book cargo in**, click or drag a post to move it. Routes, commodity lists and "To the phone" are still in the trade planner.
+
 ## Shared data
 
 - Online the cockpit and the existing tools share one address. That is why the cockpit sees your fleet and the cargo ledger of the trade planner without any transfer.
-- For now the cockpit only reads the cargo ledger. You keep cargo and notes in the trade planner.
+- The cargo ledger is the same as in the trade planner. What you book here is there, and the other way round. If it is open in two tabs, each takes over the other's state as soon as that one saves.
 - Online the cockpit shares fleet and loadouts with the ship purchase planner: what you built there is here, and the other way round.
 - Reminders, language and light/dark are stored by the cockpit itself.
 - If you clear your browser's site data, this data is gone as well.
