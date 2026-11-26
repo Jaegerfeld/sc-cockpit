@@ -56,6 +56,7 @@ from pathlib import Path
 import cockpit_bereiche as cb
 import cockpit_daten as cd
 import cockpit_seite as cs
+import cockpit_sicherung as csi
 import flotte as fl
 import kopfzeile as kz
 import sc_design as sd
@@ -87,7 +88,7 @@ def page() -> str:
         The complete HTML of the start file.
     """
     areas = [{"key": k, "de": de, "en": en} for k, _ico, de, en in cs.AREAS]
-    js = (kz.JS + sd.JS + fl.FLOTTE_JS + cd.DATEN_JS
+    js = (kz.JS + sd.JS + fl.FLOTTE_JS + cd.DATEN_JS + csi.SICHERUNG_JS
           + cs.JS.replace("/*CK_VER*/'0'", json.dumps(VERSION))
           .replace("/*CK_AREAS*/[]", json.dumps(areas, ensure_ascii=False)))
     # Screen-reader-only text and the bilingual spans of this page use the header kit's classes.
@@ -100,6 +101,7 @@ def page() -> str:
         ("<!--SD_FONTS-->", sd.FONTS), ("/*CK_CSS*/", css), ("<!--CK_VERSION-->", VERSION),
         ("<!--CK_NAV-->", nav_html()), ("<!--CK_SETTINGS-->", settings),
         ("<!--CK_OFFLINE-->", kz.bi("Offline-Paket", "Offline package")),
+        ("<!--CK_BACKUP-->", kz.bi("Sicherung …", "Backup …")),
         ("<!--CK_MERKER-->", kz.bi("Merker", "Reminders")), ("<!--CK_MNEW-->", kz.bi("Neuer Merker", "New reminder")),
         ("<!--CK_MADD-->", kz.bi("Hinzufügen", "Add")), ("<!--CK_MSHIP-->", kz.bi("Schiff (optional)", "Ship (optional)")),
         ("<!--CK_SETSUM-->", "⚙ " + kz.bi("Einstellungen", "Settings")),

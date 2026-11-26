@@ -8,7 +8,7 @@ One app for my Star Citizen tools: fleet, cargo, workshop, guides and pilot, sha
 
 ## Status
 
-State of version 0.7.0, all six areas have moved in:
+State of version 0.8.0, all six areas have moved in:
 
 - **Sidebar** with the areas Overview, Fleet, Cargo, Workshop, Guides and Pilot. Each area is loaded on first use.
 - **Reminder rail** on the right, always visible: add your own reminders, tick them off, remove them.
@@ -20,7 +20,9 @@ State of version 0.7.0, all six areas have moved in:
 - **Guides have moved in:** index of all field handbooks and flyers; a guide opens inside the cockpit in a reader frame.
 - **Still a link:** routes and commodity lists, ship purchase and the screenshot reader (at the bottom of cargo and fleet).
 
-Next: one backup file for everything; then routes, ship purchase and the screenshot reader.
+- **One backup file for everything:** save, load with a before/after comparison, one way back. It carries the data into the offline package or to a second computer.
+
+Next: routes, ship purchase and the screenshot reader.
 
 ## The existing tools
 
@@ -47,6 +49,7 @@ python cockpit_bauen.py --cache  # uses the local caches of the Schiffskauf-Plan
 |---|---|
 | `cockpit_seite.py` | Shell: page template, styles, navigation, lazy loading of areas, reminder rail |
 | `cockpit_daten.py` | Shared data `SCData`: reminders, read-only view on fleet and cargo ledger |
+| `cockpit_sicherung.py` | Backup file `SCBackup`: which storage keys belong to it, collect, check, apply, way back |
 | `cockpit_bereiche.py` | The areas; each becomes `bereiche/<key>.js`. The fleet mounts the component planner from the Schiffskauf repo, cargo and pilot the ledger, the reputation and the sessions from the Handels repo, the workshop the blueprint and Wikelo planners in one shadow root each |
 | `flotte.py`, `kopfzeile.py`, `sc_design.py` | Shared with the other tools, byte-identical copies |
 

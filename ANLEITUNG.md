@@ -86,10 +86,21 @@ Die Guides brauchen eine Internetverbindung, auch wenn du das Cockpit aus dem Of
 - Das Fracht-Logbuch ist dasselbe wie im Handels-Planer. Was du hier buchst, steht dort, und umgekehrt. Ist es in zwei Tabs offen, übernimmt jeder den Stand des anderen, sobald der speichert.
 - Flotte und Bestückungen teilt das Cockpit online mit dem Schiffskauf-Planer: Was du dort gebaut hast, steht hier, und umgekehrt.
 - Merker, Sprache und Hell/Dunkel speichert das Cockpit selbst.
-- Löschst du die Website-Daten deines Browsers, sind auch diese Daten weg.
+- Löschst du die Website-Daten deines Browsers, sind auch diese Daten weg. Eine **Sicherung** bewahrt sie als Datei.
+
+## Sicherung
+
+1. Klick unten in der Seitenleiste auf **Sicherung …** (auf Handy und Tablet unter **Einstellungen**). Der Dialog zeigt, was jetzt in diesem Browser liegt.
+2. **Sicherung speichern** legt eine Datei `SC_Cockpit_Sicherung_….json` in deinen Download-Ordner.
+3. Zum Mitnehmen öffnest du das Cockpit an der anderen Stelle (Offline-Paket, zweiter Rechner, anderer Browser), klickst auf **Sicherung …** und **Sicherung einlesen …** und wählst die Datei.
+4. Der Dialog stellt gegenüber, was jetzt im Browser steht und was in der Datei. Unterschiede sind hervorgehoben.
+5. **Diesen Stand übernehmen** ersetzt den Stand in allen Bereichen durch die Datei. Was die Datei nicht enthält, ist danach leer. Schließ vorher andere Tabs mit dem Cockpit oder den Planern.
+6. Nach dem Einlesen findest du im selben Dialog **Stand vor dem Einlesen wiederherstellen**. Das ist ein Rückweg für das letzte Einlesen.
+
+Nicht in der Sicherung: Preisdaten und gelesene Sitzungen (die lädst du neu) sowie Sprache und Hell/Dunkel.
 
 ## Offline nutzen
 
 1. Klick unten in der Seitenleiste auf **Offline-Paket** und entpack die ZIP-Datei.
 2. Öffne im Ordner `SC_Cockpit` die Datei `SC_Cockpit.html` per Doppelklick. Der Ordner `bereiche` muss daneben liegen bleiben.
-3. Die Offline-Kopie hat ihren eigenen Datenstand. Sie sieht die Daten der Online-Version nicht. Eine gemeinsame Sicherungsdatei für den Abgleich folgt in einer späteren Version.
+3. Die Offline-Kopie hat ihren eigenen Datenstand. Sie sieht die Daten der Online-Version nicht. Mit der **Sicherung** nimmst du deinen Stand von dort mit (siehe „Sicherung“).

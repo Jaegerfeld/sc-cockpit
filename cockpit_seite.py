@@ -21,6 +21,11 @@
 #   laufen muss (file://), wo fetch() gesperrt ist. Ein Bereich meldet sich
 #   mit Cockpit.register(key, {render}) an.
 #
+#   „Sicherung …“ in den Einstellungen öffnet den Dialog für die Sicherungs-
+#   datei (cockpit_sicherung.py): speichern, einlesen mit Vergleich vorher/
+#   nachher, und ein Rückweg zum Stand vor dem letzten Einlesen. Einlesen
+#   ersetzt und ist deshalb ein eigener, deutlich abgesetzter Schritt.
+#
 #   Sprache, Hell/Dunkel, „Anleitung + How-To“ und „Was ist neu?“ kommen aus
 #   kopfzeile.py und sehen aus wie in den einzelnen Tools; deren Knöpfe
 #   brauchen den Rahmen .fh. Unter 920 px wird die Seitenleiste zur Zeile oben
@@ -66,6 +71,7 @@ TEMPLATE = r"""<!DOCTYPE html>
     <details class="ck-setd" id="ck-setd" open><summary><!--CK_SETSUM--></summary>
     <div class="fh ck-set">
       <!--CK_SETTINGS-->
+      <button class="btn fh-btn" id="ck-backup" type="button" aria-haspopup="dialog">💾 <!--CK_BACKUP--></button>
       <a class="btn fh-btn" id="ck-offline" href="https://jaegerfeld.github.io/sc-cockpit/SC_Cockpit_Offline.zip">⬇ <!--CK_OFFLINE--></a>
     </div></details>
   </aside>
@@ -85,6 +91,11 @@ TEMPLATE = r"""<!DOCTYPE html>
   </aside>
 </div>
 <div class="ck-toast" id="ck-toast" role="status" aria-live="polite" hidden></div>
+<dialog class="ck-bk" id="ck-bk" aria-labelledby="ck-bkh">
+  <div class="ck-bkhead"><h2 id="ck-bkh"></h2><button type="button" class="ck-bkx" id="ck-bkx" aria-label="Schließen / Close">✕</button></div>
+  <div class="ck-bkbody" id="ck-bkbody"></div>
+  <input type="file" id="ck-bkfile" accept=".json,application/json" hidden>
+</dialog>
 <!--FH_DIALOG-->
 <script>
 /*CK_JS*/
@@ -156,6 +167,28 @@ body.ck-norail #ck-railbody{display:none}
 .ck-subtabs button{font-family:var(--disp);font-weight:700;font-size:16px;letter-spacing:.03em;background:transparent;color:var(--muted);border:0;border-bottom:3px solid transparent;padding:10px 16px;min-height:44px;cursor:pointer}
 .ck-subtabs button:hover{color:var(--ink)}
 .ck-subtabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+/* Backup dialog */
+.ck-bk{width:min(640px,94vw);max-height:88vh;padding:0;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);box-shadow:var(--shadow)}
+.ck-bk[open]{display:flex;flex-direction:column}
+.ck-bk::backdrop{background:rgba(0,0,0,.55)}
+.ck-bkhead{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 14px 10px 18px;border-bottom:1px solid var(--line)}
+.ck-bkhead h2{font-family:var(--disp);font-size:21px;margin:0}
+.ck-bkx{width:44px;height:44px;background:none;border:1px solid var(--line);border-radius:8px;color:var(--ink);font-size:16px;cursor:pointer}
+.ck-bkx:hover{border-color:var(--accent);color:var(--accent)}
+.ck-bkbody{padding:12px 18px 18px;overflow:auto}
+.ck-bkbody p{margin:0 0 10px;color:var(--muted);font-size:14.5px}
+.ck-bkbody h3{font-family:var(--disp);font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:16px 0 6px}
+.ck-bkt{width:100%;border-collapse:collapse;font-size:14.5px}
+.ck-bkt th,.ck-bkt td{text-align:left;padding:6px 8px;border-top:1px solid var(--line);vertical-align:top}
+.ck-bkt thead th{border-top:0;color:var(--muted);font-size:12.5px;font-weight:600}
+.ck-bkt td.none{color:var(--muted)}
+.ck-bkt tr.diff td:last-child{font-weight:700}
+.ck-bkacts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.ck-bkacts .btn{min-height:44px}
+/* Replacing everything is the risky step: set apart, outlined in the warning colour, never the default look. */
+.ck-bkwarn{margin-top:16px;padding:12px 14px;border:1px solid var(--bad);border-radius:10px;background:var(--badbg)}
+.ck-bkwarn p{color:var(--badtx)}
+.ck-bkstat{min-height:1.4em;margin-top:10px;font-size:14px;color:var(--ink)}
 /* Reader of the guides area */
 .ck-readbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin:0 0 10px}
 .ck-readbar b{font-family:var(--disp);font-size:18px;flex:1 1 200px;min-width:0}
@@ -327,9 +360,58 @@ $('ck-mlist').addEventListener('click',e=>{const d=e.target.closest('[data-del]'
   if(e.target.closest('#ck-mclear')){const n=SCData.items().filter(m=>m.done).length;
     if(confirm(T(`${n} erledigte Merker endgültig entfernen?`,`Remove ${n} done reminders for good?`))){SCData.clearDone(); toast(T('Erledigte entfernt.','Done ones removed.'));}}});
 
+/* ---------- backup file ---------- */
+let bkFile=null;   // parsed backup waiting for the decision to take it over: {name, saved, data}
+const day=s=>{const d=new Date(s); return isNaN(d)?'–':d.toLocaleString(lang()==='en'?'en-GB':'de-DE',{dateStyle:'medium',timeStyle:'short'});};
+function bkDownload(name,text){const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type:'application/json'})); a.download=name;
+  document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},500);}
+const bkStamp=()=>new Date().toISOString().slice(0,16).replace('T','_').replace(':','');
+function bkDraw(msg){const here=SCBackup.describe(SCBackup.collect()), prev=SCBackup.previous();
+  const cell=f=>f?`<td>${esc(T(...f))}</td>`:`<td class="none">${T('nichts','nothing')}</td>`;
+  $('ck-bkh').textContent=T('Sicherung','Backup');
+  let h=`<p>${T('Eine Datei mit allem, was du im Cockpit angelegt hast. Damit nimmst du deine Daten mit: ins Offline-Paket, auf einen zweiten Rechner oder in einen anderen Browser.','One file with everything you created in the cockpit. It carries your data along: into the offline package, to a second computer or into another browser.')}</p>`;
+  if(!bkFile){
+    h+=`<h3>${T('Jetzt in diesem Browser','In this browser now')}</h3>
+      <table class="ck-bkt"><tbody>${here.map(g=>`<tr><th scope="row">${esc(T(g.de,g.en))}</th>${cell(g.fact)}</tr>`).join('')}</tbody></table>
+      <div class="ck-bkacts"><button type="button" class="btn pri" id="ck-bksave">⬇ ${T('Sicherung speichern','Save backup')}</button>
+        <button type="button" class="btn" id="ck-bkpick">⬆ ${T('Sicherung einlesen …','Load backup …')}</button></div>
+      <p style="margin-top:12px">${T('Nicht enthalten: Preisdaten und gelesene Sitzungen (lassen sich neu laden), Sprache und Hell/Dunkel (gehören zum Gerät).','Not included: price data and sessions read (can be loaded again), language and light/dark (belong to the device).')}</p>
+      ${prev?`<div class="ck-bkwarn"><p>${T(`Vom letzten Einlesen liegt noch der Stand davor im Browser (${esc(day(prev.saved))}).`,`The state before the last import is still in the browser (${esc(day(prev.saved))}).`)}</p>
+        <button type="button" class="btn" id="ck-bkundo">↶ ${T('Stand vor dem Einlesen wiederherstellen','Restore the state before the import')}</button></div>`:''}`;
+  } else {
+    const there=SCBackup.describe(bkFile.data);
+    h+=`<h3>${T('Vergleich','Comparison')}</h3>
+      <table class="ck-bkt"><thead><tr><th></th><th>${T('Jetzt im Browser','Now in the browser')}</th><th>${T('In der Datei','In the file')} (${esc(day(bkFile.saved))})</th></tr></thead>
+      <tbody>${here.map((g,i)=>{const a=g.fact?T(...g.fact):'', b=there[i].fact?T(...there[i].fact):'';
+        return `<tr class="${a!==b?'diff':''}"><th scope="row">${esc(T(g.de,g.en))}</th>${cell(g.fact)}${cell(there[i].fact)}</tr>`;}).join('')}</tbody></table>
+      <div class="ck-bkwarn"><p>${T(`Übernehmen ersetzt den Stand in diesem Browser durch die Datei „${esc(bkFile.name)}“, in allen Bereichen. Was die Datei nicht enthält, ist danach leer. Der jetzige Stand bleibt für einen Rückweg erhalten. Schließ vorher andere Tabs mit dem Cockpit oder den Planern.`,`Taking over replaces the state in this browser with the file “${esc(bkFile.name)}”, in all areas. What the file does not contain is empty afterwards. The current state is kept for one way back. Close other tabs with the cockpit or the planners first.`)}</p>
+        <div class="ck-bkacts" style="margin-top:0"><button type="button" class="btn danger" id="ck-bkapply">${T('Diesen Stand übernehmen','Take over this state')}</button>
+        <button type="button" class="btn" id="ck-bkcancel">${T('Abbrechen','Cancel')}</button></div></div>`;
+  }
+  $('ck-bkbody').innerHTML=h+`<p class="ck-bkstat" id="ck-bkstat" role="status" aria-live="polite">${msg?esc(msg):''}</p>`;}
+function bkOpen(){bkFile=null; bkDraw(); const d=$('ck-bk'); if(!d.open) d.showModal();}
+$('ck-backup').addEventListener('click',bkOpen);
+$('ck-bkx').addEventListener('click',()=>$('ck-bk').close());
+$('ck-bk').addEventListener('close',()=>{bkFile=null; $('ck-backup').focus();});
+$('ck-bkbody').addEventListener('click',e=>{const id=e.target.closest('button')?.id; if(!id) return;
+  if(id==='ck-bksave'){const name=`SC_Cockpit_Sicherung_${bkStamp()}.json`; bkDownload(name,JSON.stringify(SCBackup.file(VERSION),null,1)); bkDraw(T(`Gespeichert als ${name}.`,`Saved as ${name}.`));}
+  else if(id==='ck-bkpick') $('ck-bkfile').click();
+  else if(id==='ck-bkcancel'){bkFile=null; bkDraw(); $('ck-bkpick').focus();}
+  else if(id==='ck-bkapply'){let kept; try{kept=SCBackup.apply(bkFile.data);}catch(x){bkDraw(T('Der Browser-Speicher hat das nicht angenommen. Es wurde nichts oder nur ein Teil übernommen; lies die Datei bitte erneut ein.','The browser storage did not accept this. Nothing or only a part was taken over; please load the file again.')); return;}
+    // No room in the browser for the way back: hand the previous state out as a file instead.
+    if(kept!=='slot') bkDownload(`SC_Cockpit_Stand_vor_Einlesen_${bkStamp()}.json`,JSON.stringify({app:SCBackup.APP,v:1,...JSON.parse(kept)},null,1));
+    location.reload();}
+  else if(id==='ck-bkundo'){if(SCBackup.restore()) location.reload(); else bkDraw(T('Der Stand davor ließ sich nicht wiederherstellen.','The state before could not be restored.'));}});
+$('ck-bkfile').addEventListener('change',e=>{const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{try{const o=JSON.parse(r.result); bkFile={name:f.name,saved:o.saved,data:SCBackup.check(o)}; bkDraw(); $('ck-bkcancel').focus();}
+    catch(x){bkFile=null; bkDraw(T(`„${f.name}“ ist keine Sicherungsdatei des Cockpits. Es wurde nichts geändert. Eine Sicherung heißt SC_Cockpit_Sicherung_….json.`,`“${f.name}” is not a backup file of the cockpit. Nothing was changed. A backup is called SC_Cockpit_Sicherung_….json.`));}};
+  r.onerror=()=>bkDraw(T('Die Datei ließ sich nicht lesen.','The file could not be read.'));
+  r.readAsText(f);});
+
 /* ---------- redraw on changes ---------- */
 // Language switch or data change: static placeholder text, current area and rail follow.
-function redraw(){$('ck-mtext').placeholder=T('z. B. Hull B bei Area18 abholen','e.g. fetch the Hull B at Area18');
+function redraw(){if($('ck-bk').open) bkDraw(); $('ck-mtext').placeholder=T('z. B. Hull B bei Area18 abholen','e.g. fetch the Hull B at Area18');
   const a=area(cur); if(a) document.title=`${T(a.de,a.en)} · SC Cockpit`; draw(); drawRail();}
 SCData.onChange(()=>{draw(); drawRail();});
 // Fleet changes made in this page (component planner) do not raise a storage event; pass them on.
