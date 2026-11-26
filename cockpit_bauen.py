@@ -33,7 +33,8 @@
 #   ohne --cache die veröffentlichte Seite (GitHub Pages, täglich frisch
 #   gebaut), sonst oder als Rückfall die Datei im Nachbar-Repo. split_page()
 #   zerlegt sie in Stile, Markup und Skript, shadow_css() bildet :root, html
-#   und body auf das Wurzelelement im Shadow Root ab.
+#   und body auf das Wurzelelement im Shadow Root ab. Der Bereich Guides nimmt
+#   genauso die Übersichtsseite von sc-guides; ihre Links werden absolut.
 #
 #   kopfzeile.py kennt das Cockpit noch nicht (die Datei liegt byte-gleich in
 #   den fünf Tool-Repos). Deshalb setzt der Bau den Changelog-Link des
@@ -269,6 +270,48 @@ def split_page(html: str, base: str) -> dict:
             "js": absolute("\n;\n".join(js)), "url": base}
 
 
+#: Published guide site; its index page becomes the guides area.
+GUIDES_URL = "https://jaegerfeld.github.io/sc-guides/"
+
+
+def guides_js(use_cache: bool) -> str:
+    """Build the guides area script from the index page of the guide site.
+
+    Args:
+        use_cache: Take ``index.html`` from the guide repo next to this one instead of the published page.
+
+    Returns:
+        JavaScript source of ``bereiche/guides.js``.
+
+    Raises:
+        OSError, ValueError: If the page is unavailable or cannot be split.
+    """
+    src = source_dir("SC_GUIDES", "_guides", "sc-guides-repo", "index.html")
+    html = None
+    if not use_cache:
+        try:
+            req = urllib.request.Request(GUIDES_URL, headers={"User-Agent": "Mozilla/5.0 sc-cockpit"})
+            with urllib.request.urlopen(req, timeout=60) as r:
+                html = r.read().decode("utf-8")
+        except OSError as e:
+            if not src:
+                raise
+            print(f"  Hinweis: {GUIDES_URL} nicht erreichbar ({e}); nehme die Datei aus {src.name}.")
+    if html is None:
+        if not src:
+            raise OSError("Übersicht von sc-guides nicht gefunden")
+        html = (src / "index.html").read_text(encoding="utf-8")
+    page = split_page(html, GUIDES_URL)
+    # Links and images of the index are relative to the guide site, not to the cockpit.
+    page["html"] = re.sub(r'\b(href|src)="(?!https?:|#|mailto:|data:)([^"]+)"',
+                          lambda m: f'{m.group(1)}="{GUIDES_URL}{m.group(2)}"', page["html"])
+    cards = len(re.findall(r'class="card"', page["html"]))
+    if not cards:
+        raise ValueError("Übersicht von sc-guides ohne Karten")
+    print(f"  Guides: {cards} Karten.")
+    return cb.guides_script(page)
+
+
 def werkstatt_js(use_cache: bool) -> str:
     """Build the workshop area script from the finished pages of Bauplan- and Wikelo-Planer.
 
@@ -360,7 +403,8 @@ def build(make_zip: bool = False, use_cache: bool = False) -> list[Path]:
     """
     scripts = cb.scripts()
     for key, make, what in (("flotte", flotte_js, "Komponenten-Planer"), ("fracht", fracht_js, "Fracht-Logbuch"),
-                            ("pilot", pilot_js, "Ruf und Sitzungen"), ("werkstatt", werkstatt_js, "Werkstatt")):
+                            ("pilot", pilot_js, "Ruf und Sitzungen"), ("werkstatt", werkstatt_js, "Werkstatt"),
+                            ("guides", guides_js, "Guides")):
         try:
             scripts[key] = make(use_cache)
         except (OSError, ValueError, KeyError, ImportError) as e:

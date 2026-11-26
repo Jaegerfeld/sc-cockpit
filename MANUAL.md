@@ -10,7 +10,8 @@ The cockpit brings the Star Citizen tools together in one app. It is under const
 - **Cargo:** the cargo ledger with notes and the reminders at their place.
 - **Pilot:** your reputation per organisation and your play sessions.
 - **Workshop:** the blueprint planner and the Wikelo planner.
-- **Other areas:** as long as an area has not moved in, its page shows what the cockpit already knows and leads to the existing tool with **Open** (new tab).
+- **Guides:** all field handbooks and flyers; a guide opens right inside the cockpit.
+- **Still in the existing tool:** routes and commodity lists, ship purchase and the screenshot reader. At the bottom of "Cargo" and "Fleet", **Open** leads there (new tab).
 - **Reminders on the right:** your list to tick off. It stays visible in every area. **Collapse »** turns it into a narrow strip; a click on it opens it again.
 - **Bottom of the sidebar:** language, light/dark, this manual, "What's new?" and the offline package. On phones and tablets they sit under **Settings**.
 
@@ -70,6 +71,14 @@ The detailed manual for reputation and sessions is in the trade planner under "M
 3. **Wikelo:** enter your stock; the offers sort by how much you still lack.
 4. Each planner has its own row with **Manual + How-To** and **What's new?**. That is where the planner's detailed manual is.
 5. Language and light/dark are set in the cockpit; both planners follow.
+
+## Guides
+
+1. Open **Guides**. The cards are grouped by topic.
+2. A click on a guide opens it here. **← All guides** leads back to the index, **In a new tab ↗** opens the guide on its own, for example to print it.
+3. Flyers and PDFs open in a new tab.
+
+The guides need an internet connection, even when you start the cockpit from the offline package.
 
 ## Shared data
 

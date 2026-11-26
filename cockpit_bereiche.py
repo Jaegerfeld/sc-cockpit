@@ -16,9 +16,9 @@
 #   der Bereiche und lädt deren große Dateien nicht. Namen von Waren und der
 #   Lagerwert stehen deshalb nur im Logbuch selbst.
 #
-#   Bereiche, die noch nicht eingezogen sind (Guides),
-#   zeigen, was das Cockpit schon weiß, und führen in das bisherige Tool. So
-#   ist kein Bereich eine Sackgasse, solange der Umzug läuft.
+#   Kann der Bau eine Quelle nicht erreichen, zeigt der Bereich, was das
+#   Cockpit schon weiß, und führt in das bisherige Tool. So ist kein Bereich
+#   eine Sackgasse.
 #
 #   Seit 0.2.0 ist die Flotte eingezogen: FLOTTE_JS hängt den Komponenten-
 #   Planer ein. Dessen Quelle bleibt im Repo StarCitizen-Schiffskauf-Planer
@@ -35,8 +35,13 @@
 #   das Seitenskript läuft mit einem Ersatz-``document``. An den beiden Tools
 #   ändert sich dafür nichts; der Bau nimmt ihre veröffentlichte Seite.
 #
-#   Reihenfolge des weiteren Umzugs: Guides; Routen und Waren folgen dem
-#   Logbuch.
+#   Seit 0.7.0 zeigt GUIDES_JS die Übersicht der Guide-Seite (sc-guides) auf
+#   dieselbe Weise und öffnet einen gewählten Guide in einem Leserahmen. Die
+#   Guides sind Dokumente, keine Werkzeuge; ein Rahmen auf die veröffentlichte
+#   Seite ist für sie die passende Form. Damit sind alle Bereiche eingezogen.
+#
+#   Offen: Routen und Waren des Handels-Planers, der Schiffskauf und der
+#   Screenshot-Auswerter (noch Wegweiser am Fuß von Fracht und Flotte).
 # =============================================================================
 """Area scripts of the cockpit; each becomes its own lazily loaded file under bereiche/."""
 from __future__ import annotations
@@ -167,7 +172,7 @@ Cockpit.register('werkstatt',{render(el){Cockpit.placeholder(el,{title:['Werksta
       {ico:'🧮',name:['Wikelo-Planer','Wikelo planner'],what:['Wikelo-Tauschgeschäfte planen und den Fortschritt verfolgen.','Plan Wikelo trades and track the progress.'],url:'__wikelo__'}]});}});
 """,
     "guides": r"""
-/* ---------- guides (not moved in yet) ---------- */
+/* ---------- guides: fallback when the guide index could not be built ---------- */
 Cockpit.register('guides',{render(el){Cockpit.placeholder(el,{title:['Guides','Guides'],
     lede:['Flyer und Karten zu Schiffen, Orten und Spielweisen, zum Lesen und Ausdrucken.','Flyers and maps on ships, places and play styles, to read and to print.'],
     tools:[{ico:'📚',name:['Guides-Übersicht','Guides overview'],what:['Alle Guides auf Deutsch und Englisch, als Seite und PDF.','All guides in German and English, as page and PDF.'],url:'__guides__'}]});}});
@@ -488,6 +493,76 @@ def werkstatt_script(tools: dict[str, dict]) -> str:
     if WERKSTATT_JS.count("/*TOOLS*/") != 1:
         raise ValueError("Marke /*TOOLS*/ fehlt in der Werkstatt-Vorlage")
     return WERKSTATT_JS.replace("/*TOOLS*/", ",\n".join(parts)).strip() + "\n"
+
+
+#: Guides area: the index of the guide site in a shadow root (its cards, in its own styles), and a reader
+#: that shows a chosen guide inside the cockpit. Guides are documents, so the reader is a frame on the
+#: published guide page; flyers and PDFs open in a new tab.
+GUIDES_JS = r"""
+/* ---------- guides: index of the guide site and a reader (source: sc-guides) ---------- */
+(function(){
+const C=Cockpit, T=C.T, html=document.documentElement;
+const PAGE={css:/*CSS*/'',html:/*HTML*/'',attrs:/*ATTRS*/{},url:/*URL*/''};
+// The index's own header (title, language and theme switches) is replaced by the cockpit's.
+const EXTRA=`.sc-root{background:transparent!important;min-height:0!important}
+  header,.hazard{display:none!important} .wrap,main{max-width:none!important;padding-left:0!important;padding-right:0!important}`;
+let node=null, el=null, open=null;
+// The index follows language and theme through the attributes its styles look at.
+function follow(){if(!el) return; el.setAttribute('data-theme',html.getAttribute('data-theme')||'dark');
+  if(C.lang()==='en'){el.setAttribute('data-lang','en'); el.setAttribute('lang','en');} else {el.removeAttribute('data-lang'); el.setAttribute('lang','de');}}
+// Reader: the chosen guide in a frame, with the way back and the way out next to its title.
+function reader(){const r=node.querySelector('.ck-reader'), idx=node.querySelector('[data-idx]');
+  idx.hidden=!!open; r.hidden=!open; if(!open){r.innerHTML=''; return;}
+  if(r.dataset.url!==open.url){r.dataset.url=open.url;
+    r.innerHTML=`<div class="ck-readbar"><button type="button" class="btn" data-back>← <span class="de">Alle Guides</span><span class="en">All guides</span></button>
+      <b></b><a class="btn" target="_blank" rel="noopener"><span class="de">In neuem Tab</span><span class="en">In a new tab</span> <span aria-hidden="true">↗</span></a></div>
+      <iframe referrerpolicy="no-referrer"></iframe>`;
+    r.querySelector('b').textContent=open.title; r.querySelector('a').href=open.url;
+    const f=r.querySelector('iframe'); f.title=open.title; f.src=open.url;}}
+function start(host){
+  node=document.createElement('div'); node.className='ck-guides';
+  node.innerHTML=`<h1>Guides</h1>
+    <p class="ck-lede"><span class="de">Feldhandbücher und Flyer. Ein Klick auf eine Karte öffnet den Guide hier; Flyer und PDFs öffnen in einem neuen Tab.</span><span class="en">Field handbooks and flyers. A click on a card opens the guide here; flyers and PDFs open in a new tab.</span></p>
+    <div data-idx></div><div class="ck-reader" hidden></div>`;
+  host.replaceChildren(node);
+  const root=node.querySelector('[data-idx]').attachShadow({mode:'open'});
+  const st=document.createElement('style'); st.textContent=PAGE.css+EXTRA; root.appendChild(st);
+  el=document.createElement('div'); el.className='sc-root'; for(const k in PAGE.attrs) el.setAttribute(k,PAGE.attrs[k]);
+  el.innerHTML=PAGE.html; root.appendChild(el);
+  // The index also lists the planners; inside the cockpit they are the areas of the sidebar.
+  for(const h of el.querySelectorAll('h2')) if(/Planer|Planners|Tools/.test(h.textContent)){h.hidden=true; if(h.nextElementSibling) h.nextElementSibling.hidden=true;}
+  // Guide pages open in the reader; everything else (flyers, PDFs, other sites) leaves in a new tab.
+  root.addEventListener('click',e=>{const a=e.target.closest('a[href]'); if(!a) return;
+    const u=a.href; if(/^https:\/\/jaegerfeld\.github\.io\/sc-guides\/[^/?#]+\.html$/.test(u)){e.preventDefault();
+      open={url:u,title:(a.querySelector('h3')||a).textContent.trim()}; reader(); node.querySelector('[data-back]').focus(); window.scrollTo({top:0});}
+    else {a.target='_blank'; a.rel='noopener';}});
+  node.querySelector('.ck-reader').addEventListener('click',e=>{if(e.target.closest('[data-back]')){open=null; reader(); window.scrollTo({top:0});}});
+  new MutationObserver(follow).observe(html,{attributes:true,attributeFilter:['data-theme']});
+}
+Cockpit.register('guides',{render(host){if(!node) start(host); else if(node.parentNode!==host) host.replaceChildren(node);
+  follow(); reader();}});
+})();
+"""
+
+
+def guides_script(page: dict) -> str:
+    """Return the guides area script with the index page of the guide site built in.
+
+    Args:
+        page: ``{"css", "html", "attrs", "url"}`` of the index page, as produced by the build.
+
+    Returns:
+        JavaScript source of ``bereiche/guides.js``.
+
+    Raises:
+        ValueError: If a mark of the template is missing.
+    """
+    js = GUIDES_JS
+    for mark, key in [("/*CSS*/''", "css"), ("/*HTML*/''", "html"), ("/*ATTRS*/{}", "attrs"), ("/*URL*/''", "url")]:
+        if js.count(mark) != 1:
+            raise ValueError(f"Marke {mark} fehlt in der Guides-Vorlage")
+        js = js.replace(mark, json.dumps(page[key], ensure_ascii=False))
+    return js.strip() + "\n"
 
 
 def scripts() -> dict[str, str]:
