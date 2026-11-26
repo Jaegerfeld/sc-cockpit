@@ -8,7 +8,7 @@ One app for my Star Citizen tools: fleet, cargo, workshop, guides and pilot, sha
 
 ## Status
 
-Under construction. State of version 0.5.0:
+Under construction. State of version 0.6.0:
 
 - **Sidebar** with the areas Overview, Fleet, Cargo, Workshop, Guides and Pilot. Each area is loaded on first use.
 - **Reminder rail** on the right, always visible: add your own reminders, tick them off, remove them.
@@ -16,9 +16,10 @@ Under construction. State of version 0.5.0:
 - **Fleet has moved in:** component planner with your own fleet; the shopping list can be taken over as reminders, open reminders then follow it by themselves.
 - **Cargo has moved in:** cargo ledger with notes; reminders appear at their place, purchase reminders at the place of their shop.
 - **Pilot has moved in:** reputation per organisation and play sessions from the game logs (read locally only); the reputation is on the status board as well.
-- **Other areas as signposts:** workshop and guides have not moved in yet; their pages lead to the existing tools.
+- **Workshop has moved in:** blueprint planner and Wikelo planner as sub-tabs, each in a shielded part of the page.
+- **Guides as a signpost:** the guides have not moved in yet; their pages lead to the existing tools.
 
-Planned order: workshop and guides, and one backup file for everything.
+Planned order: guides, and one backup file for everything.
 
 ## The existing tools
 
@@ -33,7 +34,7 @@ Online all of them live under the same address (`jaegerfeld.github.io`) and ther
 
 ## Build
 
-Standard library only. The fleet area needs the source of the component planner: the repo [StarCitizen-Schiffskauf-Planer](https://github.com/Jaegerfeld/StarCitizen-Schiffskauf-Planer) next to this repo (or its path in `SC_SCHIFFSKAUF`). The cargo area needs the repo [StarCitizen-Handels-Planer](https://github.com/Jaegerfeld/StarCitizen-Handels-Planer) in the same way (`SC_HANDEL`). Without a source or without network the script builds the area as a signpost.
+Standard library only. The fleet area needs the source of the component planner: the repo [StarCitizen-Schiffskauf-Planer](https://github.com/Jaegerfeld/StarCitizen-Schiffskauf-Planer) next to this repo (or its path in `SC_SCHIFFSKAUF`). The cargo area needs the repo [StarCitizen-Handels-Planer](https://github.com/Jaegerfeld/StarCitizen-Handels-Planer) in the same way (`SC_HANDEL`). The workshop takes the published pages of the [blueprint planner](https://github.com/Jaegerfeld/StarCitizen-Bauplan-Planer) and the [Wikelo planner](https://github.com/Jaegerfeld/StarCitizen-Wikelo-Planer) (with `--cache` the built files from the repos next to this one). Without a source or without network the script builds the area as a signpost.
 
 ```bash
 python cockpit_bauen.py          # writes cockpit/SC_Cockpit.html and cockpit/bereiche/*.js
@@ -45,7 +46,7 @@ python cockpit_bauen.py --cache  # uses the local caches of the Schiffskauf-Plan
 |---|---|
 | `cockpit_seite.py` | Shell: page template, styles, navigation, lazy loading of areas, reminder rail |
 | `cockpit_daten.py` | Shared data `SCData`: reminders, read-only view on fleet and cargo ledger |
-| `cockpit_bereiche.py` | The areas; each becomes `bereiche/<key>.js`. The fleet mounts the component planner from the Schiffskauf repo, cargo and pilot the ledger, the reputation and the sessions from the Handels repo |
+| `cockpit_bereiche.py` | The areas; each becomes `bereiche/<key>.js`. The fleet mounts the component planner from the Schiffskauf repo, cargo and pilot the ledger, the reputation and the sessions from the Handels repo, the workshop the blueprint and Wikelo planners in one shadow root each |
 | `flotte.py`, `kopfzeile.py`, `sc_design.py` | Shared with the other tools, byte-identical copies |
 
 Areas are loaded with a `<script>` element, not `fetch()`, so the page also runs from a folder on disk.

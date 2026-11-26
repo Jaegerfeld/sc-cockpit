@@ -9,6 +9,7 @@ Das Cockpit führt die Star-Citizen-Werkzeuge in einer App zusammen. Es ist im A
 - **Flotte:** deine Schiffe und der Komponenten-Planer. Hier tauschst du Teile und übernimmst die Einkaufsliste als Merker.
 - **Fracht:** das Fracht-Logbuch mit Notizen und den Merkern am Ort.
 - **Pilot:** dein Ruf je Organisation und deine Spielsitzungen.
+- **Werkstatt:** der Bauplan-Planer und der Wikelo-Planer.
 - **Übrige Bereiche:** Solange ein Bereich noch nicht eingezogen ist, zeigt seine Seite, was das Cockpit schon weiß, und führt mit **Öffnen** in das bisherige Tool (neuer Tab).
 - **Merker rechts:** deine Liste zum Abhaken. Sie bleibt in jedem Bereich sichtbar. **Einklappen »** macht sie zum schmalen Streifen, ein Klick darauf öffnet sie wieder.
 - **Unten in der Seitenleiste:** Sprache, Hell/Dunkel, diese Anleitung, „Was ist neu?“ und das Offline-Paket. Auf Handy und Tablet stehen sie unter **Einstellungen**.
@@ -61,6 +62,14 @@ Fracht buchst du wie im Handels-Planer: **+ Fracht einbuchen**, Posten anklicken
 5. Die **Übersicht** zeigt danach den Ruf (Favoriten zuerst, dann wer dem Aufstieg am nächsten ist) und die letzte gelesene Sitzung.
 
 Die ausführliche Anleitung zu Ruf und Sitzungen steht im Handels-Planer unter „Anleitung + How-To“; die Reiter sind dieselben.
+
+## Werkstatt: Baupläne und Wikelo
+
+1. Öffne **Werkstatt**. Oben wechselst du zwischen **Baupläne** und **Wikelo**.
+2. **Baupläne:** Such im Katalog, füg Baupläne mit **+** hinzu und trag unter „Verfügbare Ressourcen“ ein, was du schon hast. Die Beschaffungsliste zeigt, was fehlt.
+3. **Wikelo:** Trag deinen Bestand ein; die Angebote sortieren sich danach, wie viel dir noch fehlt.
+4. Jeder Planer hat seine eigene Zeile mit **Anleitung + How-To** und **Was ist neu?**. Dort steht die ausführliche Anleitung des Planers.
+5. Sprache und Hell/Dunkel stellst du im Cockpit ein; beide Planer folgen.
 
 ## Gemeinsame Daten
 
