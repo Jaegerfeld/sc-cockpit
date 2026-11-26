@@ -8,16 +8,17 @@ One app for my Star Citizen tools: fleet, cargo, workshop, guides and pilot, sha
 
 ## Status
 
-Under construction. State of version 0.4.0:
+Under construction. State of version 0.5.0:
 
 - **Sidebar** with the areas Overview, Fleet, Cargo, Workshop, Guides and Pilot. Each area is loaded on first use.
 - **Reminder rail** on the right, always visible: add your own reminders, tick them off, remove them.
 - **Overview as a status board:** "To do" with all open reminders by place (tick them, jump to the place in the ledger), plus fleet, cargo and the last session read.
 - **Fleet has moved in:** component planner with your own fleet; the shopping list can be taken over as reminders, open reminders then follow it by themselves.
 - **Cargo has moved in:** cargo ledger with notes; reminders appear at their place, purchase reminders at the place of their shop.
-- **Other areas as signposts:** workshop, guides and pilot have not moved in yet; their pages lead to the existing tools.
+- **Pilot has moved in:** reputation per organisation and play sessions from the game logs (read locally only); the reputation is on the status board as well.
+- **Other areas as signposts:** workshop and guides have not moved in yet; their pages lead to the existing tools.
 
-Planned order: workshop, pilot and guides, and one backup file for everything.
+Planned order: workshop and guides, and one backup file for everything.
 
 ## The existing tools
 
@@ -44,14 +45,14 @@ python cockpit_bauen.py --cache  # uses the local caches of the Schiffskauf-Plan
 |---|---|
 | `cockpit_seite.py` | Shell: page template, styles, navigation, lazy loading of areas, reminder rail |
 | `cockpit_daten.py` | Shared data `SCData`: reminders, read-only view on fleet and cargo ledger |
-| `cockpit_bereiche.py` | The areas; each becomes `bereiche/<key>.js`. The fleet mounts the component planner from the Schiffskauf repo, cargo the ledger from the Handels repo |
+| `cockpit_bereiche.py` | The areas; each becomes `bereiche/<key>.js`. The fleet mounts the component planner from the Schiffskauf repo, cargo and pilot the ledger, the reputation and the sessions from the Handels repo |
 | `flotte.py`, `kopfzeile.py`, `sc_design.py` | Shared with the other tools, byte-identical copies |
 
 Areas are loaded with a `<script>` element, not `fetch()`, so the page also runs from a folder on disk.
 
 ## Data and privacy
 
-Everything is stored in your browser (`localStorage`): reminders (`sc_merker_v1`), language and theme (`sc_cockpit_ui`), the shared fleet (`sc_flotte_v1`) and the cargo ledger (`scha_ledger_v1`). Plus the loadouts of the component planner (`scsk_kp`). Nothing is sent anywhere. The page loads two fonts from Google Fonts; without a connection it uses system fonts.
+Everything is stored in your browser (`localStorage`): reminders (`sc_merker_v1`), language and theme (`sc_cockpit_ui`), the shared fleet (`sc_flotte_v1`) and the cargo ledger (`scha_ledger_v1`). Plus the loadouts of the component planner (`scsk_kp`), the reputation (`scha_rep_v1`, short state `sc_cockpit_ruf`) and the cache of sessions read (`scha_sessions_cache_v2`). Nothing is sent anywhere. The page loads two fonts from Google Fonts; without a connection it uses system fonts.
 
 ## Notes
 

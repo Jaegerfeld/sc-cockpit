@@ -25,7 +25,9 @@
 #   Genauso der Bereich Fracht: Das Fracht-Logbuch kommt aus dem Repo
 #   StarCitizen-Handels-Planer (SC_HANDEL, _handel, Nachbarordner), seine
 #   Stammdaten (Orte, Waren, Schiffe mit Laderaum) von UEX. Der Ordner
-#   eigene_daten des Handels-Planers wird dabei nie gelesen.
+#   eigene_daten des Handels-Planers wird dabei nie gelesen. Aus demselben
+#   Repo kommen für den Bereich Pilot die Reiter Ruf und Sitzungen samt der
+#   Ruf-Tabelle ruf_tabelle.json; das braucht kein Netz.
 #
 #   kopfzeile.py kennt das Cockpit noch nicht (die Datei liegt byte-gleich in
 #   den fünf Tool-Repos). Deshalb setzt der Bau den Changelog-Link des
@@ -34,6 +36,7 @@
 """Build the SC Cockpit: start page plus one lazily loaded script per area."""
 from __future__ import annotations
 
+import functools
 import importlib
 import json
 import os
@@ -123,6 +126,57 @@ def schiffskauf_dir() -> Path | None:
     return source_dir("SC_SCHIFFSKAUF", "_schiffskauf", "StarCitizen-Schiffskauf-Planer", "komponenten_seite.py")
 
 
+def handel_dir() -> Path:
+    """Find the StarCitizen-Handels-Planer sources and make them importable.
+
+    Raises:
+        ImportError: If the sources are not there.
+    """
+    src = source_dir("SC_HANDEL", "_handel", "StarCitizen-Handels-Planer", "logbuch_seite.py")
+    if not src:
+        raise ImportError("Quelle StarCitizen-Handels-Planer nicht gefunden")
+    if str(src) not in sys.path:
+        sys.path.append(str(src))
+    return src
+
+
+@functools.cache
+def logbuch_data(use_cache: bool) -> dict:
+    """Master data of the cargo ledger (places, commodities, ships), fetched once per build."""
+    handel_dir()
+    data = importlib.import_module("logbuch_daten").build(use_cache=use_cache)
+    if not data.get("places"):
+        raise ValueError("Logbuch-Stammdaten ohne Orte")
+    return data
+
+
+def pilot_js(use_cache: bool) -> str:
+    """Build the pilot area script with the reputation and sessions tabs of the Handels-Planer.
+
+    Args:
+        use_cache: Passed on to the ledger master data (the places name a session's last place).
+
+    Returns:
+        JavaScript source of ``bereiche/pilot.js``.
+
+    Raises:
+        OSError, ValueError, KeyError, ImportError: If the sources are unavailable.
+    """
+    src = handel_dir()
+    sz = importlib.import_module("sitzungen_seite")
+    rf = importlib.import_module("ruf_seite")
+    table = src / "ruf_tabelle.json"
+    ruf_json = table.read_text(encoding="utf-8").replace("</", "<\\/") if table.exists() else "null"
+    try:
+        places = logbuch_data(use_cache)["places"]
+    except (OSError, ValueError, KeyError) as e:
+        print(f"  Hinweis: Pilot ohne Ortsnamen aus dem Logbuch ({e}).")
+        places = []
+    print(f"  Pilot: Ruf-Tabelle {'vorhanden' if ruf_json != 'null' else 'FEHLT'}, {len(places)} Orte.")
+    return cb.pilot_script(sz.SZ_HTML + rf.RF_HTML, sz.SZ_CSS + rf.RF_CSS, sz.SZ_JS,
+                           rf.RF_JS.replace("/*__RUF__*/null", ruf_json), places)
+
+
 def fracht_js(use_cache: bool) -> str:
     """Build the cargo area script with the cargo ledger from the Handels-Planer sources.
 
@@ -135,16 +189,9 @@ def fracht_js(use_cache: bool) -> str:
     Raises:
         OSError, ValueError, KeyError, ImportError: If the sources or the data are unavailable.
     """
-    src = source_dir("SC_HANDEL", "_handel", "StarCitizen-Handels-Planer", "logbuch_seite.py")
-    if not src:
-        raise ImportError("Quelle StarCitizen-Handels-Planer nicht gefunden")
-    if str(src) not in sys.path:
-        sys.path.append(str(src))
-    daten = importlib.import_module("logbuch_daten")
+    handel_dir()
     seite = importlib.import_module("logbuch_seite")
-    data = daten.build(use_cache=use_cache)
-    if not data.get("places"):
-        raise ValueError("Logbuch-Stammdaten ohne Orte")
+    data = logbuch_data(use_cache)
     payload = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     print(f"  Fracht: {len(data['places'])} Orte, {len(data['wares'])} Waren, {len(data['ships'])} Schiffe mit Laderaum.")
     return cb.fracht_script(seite.LB_HTML, seite.LB_CSS, seite.LB_JS.replace("/*__LB__*/null", payload))
@@ -202,7 +249,8 @@ def build(make_zip: bool = False, use_cache: bool = False) -> list[Path]:
         ValueError: If a sidebar area has no script, a script has no area, or a template mark is wrong.
     """
     scripts = cb.scripts()
-    for key, make, what in (("flotte", flotte_js, "Komponenten-Planer"), ("fracht", fracht_js, "Fracht-Logbuch")):
+    for key, make, what in (("flotte", flotte_js, "Komponenten-Planer"), ("fracht", fracht_js, "Fracht-Logbuch"),
+                            ("pilot", pilot_js, "Ruf und Sitzungen")):
         try:
             scripts[key] = make(use_cache)
         except (OSError, ValueError, KeyError, ImportError) as e:

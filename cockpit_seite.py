@@ -149,6 +149,13 @@ body.ck-norail #ck-railbody{display:none}
 .ck-mdone .btn{margin-top:8px}
 .ck-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:900;display:flex;gap:12px;align-items:center;background:var(--panel);color:var(--ink);border:1px solid var(--accent);border-radius:10px;padding:8px 10px 8px 16px;box-shadow:var(--shadow);max-width:92vw}
 .ck-toast[hidden]{display:none}
+/* Helpers the moved-in tools bring along from their pages */
+.hide{display:none!important}
+/* Sub-tabs inside an area (Pilot: reputation, sessions) */
+.ck-subtabs{display:flex;gap:6px;margin:0 0 14px;border-bottom:1px solid var(--line)}
+.ck-subtabs button{font-family:var(--disp);font-weight:700;font-size:16px;letter-spacing:.03em;background:transparent;color:var(--muted);border:0;border-bottom:3px solid transparent;padding:10px 16px;min-height:44px;cursor:pointer}
+.ck-subtabs button:hover{color:var(--ink)}
+.ck-subtabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
 /* Status board of the overview */
 .ck-board{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;align-items:start}
 .ck-panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;min-width:0}

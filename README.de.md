@@ -8,16 +8,17 @@ Eine App für meine Star-Citizen-Werkzeuge: Flotte, Fracht, Werkstatt, Guides un
 
 ## Stand
 
-Im Aufbau. Stand Version 0.4.0:
+Im Aufbau. Stand Version 0.5.0:
 
 - **Seitenleiste** mit den Bereichen Übersicht, Flotte, Fracht, Werkstatt, Guides und Pilot. Jeder Bereich wird beim ersten Öffnen geladen.
 - **Merker-Leiste** rechts, immer sichtbar: eigene Merker anlegen, abhaken, entfernen.
 - **Übersicht als Lagebild:** „Zu erledigen“ mit allen offenen Merkern nach Ort (abhaken, Sprung zum Ort im Logbuch), dazu Flotte, Fracht und die letzte gelesene Sitzung.
 - **Flotte ist eingezogen:** Komponenten-Planer mit eigener Flotte; die Einkaufsliste lässt sich als Merker übernehmen, offene Merker folgen ihr dann von selbst.
 - **Fracht ist eingezogen:** Fracht-Logbuch mit Notizen; Merker erscheinen am Ort, Kaufmerker am Ort ihres Händlers.
-- **Übrige Bereiche als Wegweiser:** Werkstatt, Guides und Pilot sind noch nicht eingezogen; ihre Seiten führen in die bisherigen Tools.
+- **Pilot ist eingezogen:** Ruf je Organisation und Spielsitzungen aus den Spiel-Logs (nur lokal gelesen); der Ruf steht auch im Lagebild.
+- **Übrige Bereiche als Wegweiser:** Werkstatt und Guides sind noch nicht eingezogen; ihre Seiten führen in die bisherigen Tools.
 
-Geplante Reihenfolge: Werkstatt, Pilot und Guides, dazu eine Sicherungsdatei für alles.
+Geplante Reihenfolge: Werkstatt und Guides, dazu eine Sicherungsdatei für alles.
 
 ## Die bisherigen Tools
 
@@ -44,14 +45,14 @@ python cockpit_bauen.py --cache  # nimmt die lokalen Zwischenspeicher des Schiff
 |---|---|
 | `cockpit_seite.py` | Hülle: Seitenvorlage, Stile, Navigation, Nachladen der Bereiche, Merker-Leiste |
 | `cockpit_daten.py` | Gemeinsame Daten `SCData`: Merker, lesender Blick auf Flotte und Fracht-Logbuch |
-| `cockpit_bereiche.py` | Die Bereiche; jeder wird zu `bereiche/<schlüssel>.js`. Die Flotte hängt den Komponenten-Planer aus dem Schiffskauf-Repo ein, die Fracht das Logbuch aus dem Handels-Repo |
+| `cockpit_bereiche.py` | Die Bereiche; jeder wird zu `bereiche/<schlüssel>.js`. Die Flotte hängt den Komponenten-Planer aus dem Schiffskauf-Repo ein, Fracht und Pilot das Logbuch, den Ruf und die Sitzungen aus dem Handels-Repo |
 | `flotte.py`, `kopfzeile.py`, `sc_design.py` | Gemeinsam mit den anderen Tools, byte-gleiche Kopien |
 
 Bereiche werden über ein `<script>`-Element geladen, nicht über `fetch()`, damit die Seite auch aus einem Ordner auf der Festplatte läuft.
 
 ## Daten und Datenschutz
 
-Alles liegt in deinem Browser (`localStorage`): Merker (`sc_merker_v1`), Sprache und Hell/Dunkel (`sc_cockpit_ui`), die gemeinsame Flotte (`sc_flotte_v1`) und das Fracht-Logbuch (`scha_ledger_v1`). Dazu kommen die Bestückungen des Komponenten-Planers (`scsk_kp`). Es wird nichts versendet. Die Seite lädt zwei Schriften von Google Fonts; ohne Verbindung nimmt sie Systemschriften.
+Alles liegt in deinem Browser (`localStorage`): Merker (`sc_merker_v1`), Sprache und Hell/Dunkel (`sc_cockpit_ui`), die gemeinsame Flotte (`sc_flotte_v1`) und das Fracht-Logbuch (`scha_ledger_v1`). Dazu kommen die Bestückungen des Komponenten-Planers (`scsk_kp`), der Ruf (`scha_rep_v1`, Kurzstand `sc_cockpit_ruf`) und der Zwischenspeicher gelesener Sitzungen (`scha_sessions_cache_v2`). Es wird nichts versendet. Die Seite lädt zwei Schriften von Google Fonts; ohne Verbindung nimmt sie Systemschriften.
 
 ## Hinweise
 

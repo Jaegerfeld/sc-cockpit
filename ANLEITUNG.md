@@ -8,6 +8,7 @@ Das Cockpit führt die Star-Citizen-Werkzeuge in einer App zusammen. Es ist im A
 - **Übersicht:** dein Lagebild. Oben steht **Zu erledigen** mit allen offenen Merkern nach Ort, darunter Flotte, Fracht und die letzte Sitzung.
 - **Flotte:** deine Schiffe und der Komponenten-Planer. Hier tauschst du Teile und übernimmst die Einkaufsliste als Merker.
 - **Fracht:** das Fracht-Logbuch mit Notizen und den Merkern am Ort.
+- **Pilot:** dein Ruf je Organisation und deine Spielsitzungen.
 - **Übrige Bereiche:** Solange ein Bereich noch nicht eingezogen ist, zeigt seine Seite, was das Cockpit schon weiß, und führt mit **Öffnen** in das bisherige Tool (neuer Tab).
 - **Merker rechts:** deine Liste zum Abhaken. Sie bleibt in jedem Bereich sichtbar. **Einklappen »** macht sie zum schmalen Streifen, ein Klick darauf öffnet sie wieder.
 - **Unten in der Seitenleiste:** Sprache, Hell/Dunkel, diese Anleitung, „Was ist neu?“ und das Offline-Paket. Auf Handy und Tablet stehen sie unter **Einstellungen**.
@@ -50,6 +51,16 @@ Merker gibt es nur für Schiffe deiner Flotte. Ein Schiff in der Vorschau fügst
 5. Darunter steht wie gewohnt das Feld **Notizen** für freien Text.
 
 Fracht buchst du wie im Handels-Planer: **+ Fracht einbuchen**, Posten anklicken oder ziehen zum Verschieben. Routen, Warenlisten und „Aufs Handy“ sind noch im Handels-Planer.
+
+## Pilot: Ruf und Sitzungen
+
+1. Öffne **Pilot**. Oben wechselst du zwischen **Ruf** und **Sitzungen**.
+2. **Log-Ordner laden …** liest `Game.log` und `logbackups` aus deinem Star-Citizen-Ordner (LIVE oder PTU). Die Dateien bleiben auf deinem Rechner.
+3. **Ruf:** Gleich je Organisation einmal Rang und Balken aus dem mobiGlas ab, von Hand oder mit **Screenshots abgleichen …**. Danach zählt der Reiter die abgeschlossenen Missionen aus den Logs mit und schätzt den Stand.
+4. **Sitzungen:** zeigt je Sitzung Shard, letzten Ort, Schiff und ob das Spiel abgestürzt ist. Ein Klick auf den Ort öffnet ihn im Fracht-Logbuch.
+5. Die **Übersicht** zeigt danach den Ruf (Favoriten zuerst, dann wer dem Aufstieg am nächsten ist) und die letzte gelesene Sitzung.
+
+Die ausführliche Anleitung zu Ruf und Sitzungen steht im Handels-Planer unter „Anleitung + How-To“; die Reiter sind dieselben.
 
 ## Gemeinsame Daten
 

@@ -8,6 +8,7 @@ The cockpit brings the Star Citizen tools together in one app. It is under const
 - **Overview:** your status board. At the top is **To do** with all open reminders by place, below it fleet, cargo and the last session.
 - **Fleet:** your ships and the component planner. Here you swap parts and take the shopping list over as reminders.
 - **Cargo:** the cargo ledger with notes and the reminders at their place.
+- **Pilot:** your reputation per organisation and your play sessions.
 - **Other areas:** as long as an area has not moved in, its page shows what the cockpit already knows and leads to the existing tool with **Open** (new tab).
 - **Reminders on the right:** your list to tick off. It stays visible in every area. **Collapse »** turns it into a narrow strip; a click on it opens it again.
 - **Bottom of the sidebar:** language, light/dark, this manual, "What's new?" and the offline package. On phones and tablets they sit under **Settings**.
@@ -50,6 +51,16 @@ Reminders are kept for ships of your fleet only. Add a ship in preview with **+ 
 5. Below that is the **Notes** field for free text, as before.
 
 You book cargo as in the trade planner: **+ Book cargo in**, click or drag a post to move it. Routes, commodity lists and "To the phone" are still in the trade planner.
+
+## Pilot: reputation and sessions
+
+1. Open **Pilot**. At the top you switch between **Reputation** and **Sessions**.
+2. **Load log folder …** reads `Game.log` and `logbackups` from your Star Citizen folder (LIVE or PTU). The files stay on your computer.
+3. **Reputation:** align rank and bar from the mobiGlas once per organisation, by hand or with **Align screenshots …**. After that the tab adds the completed missions from the logs and estimates the state.
+4. **Sessions:** shows shard, last place, ship and whether the game crashed, per session. A click on the place opens it in the cargo ledger.
+5. The **Overview** then shows the reputation (favourites first, then whoever is closest to the next rank) and the last session read.
+
+The detailed manual for reputation and sessions is in the trade planner under "Manual + How-To"; the tabs are the same.
 
 ## Shared data
 
