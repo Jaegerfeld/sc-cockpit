@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ruff_cache/
+
+# OS / Editor
+Thumbs.db
+.DS_Store
+.idea/
+.vscode/
+
+# Pages-Build und Offline-Paket (entstehen beim Bauen)
+_site/
+SC_Cockpit_Offline.zip
