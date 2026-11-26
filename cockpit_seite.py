@@ -297,7 +297,9 @@ async function show(key,focus){cur=key; const a=area(key), main=$('ck-main');
     main.innerHTML=`<div class="ck-state"><h1 tabindex="-1">${esc(T(a.de,a.en))}</h1><p>${T(`Der Bereich „${esc(a.de)}“ konnte nicht geladen werden. Prüfe die Verbindung; im Offline-Paket muss der Ordner „bereiche“ neben der Startdatei liegen.`,`The “${esc(a.en)}” area could not be loaded. Check the connection; in the offline package the “bereiche” folder must sit next to the start file.`)}</p><button type="button" class="btn pri" id="ck-retry">${T('Erneut versuchen','Try again')}</button></div>`;
     $('ck-retry').addEventListener('click',()=>show(key,true)); return;}
   clearTimeout(wait); if(cur!==key) return;
-  draw(); if(focus){const h=main.querySelector('h1'); if(h){h.setAttribute('tabindex','-1'); h.focus({preventScroll:true});} window.scrollTo({top:0});}}
+  // "#/<area>/<sub-tab>" opens a sub-tab of the area (a link or a reload lands there); areas without one ignore it.
+  const sub=(location.hash.match(/^#\/[a-z]+\/([a-z]+)/)||[])[1]; if(sub&&!Cockpit.intent) Cockpit.intent={pane:sub};
+  draw(); if(sub&&Cockpit.intent&&Cockpit.intent.pane===sub) Cockpit.intent=null; if(focus){const h=main.querySelector('h1'); if(h){h.setAttribute('tabindex','-1'); h.focus({preventScroll:true});} window.scrollTo({top:0});}}
 function draw(){const main=$('ck-main'); if(!REG[cur]) return;
   try{REG[cur].render(main);}catch(e){main.innerHTML=`<p class="ck-state">${T('Dieser Bereich hat einen Fehler gemeldet:','This area reported an error:')} ${esc(e.message)}</p>`;}}
 function go(key){if(keyFromHash()===key&&cur===key) return; location.hash='#/'+key;}
@@ -424,9 +426,72 @@ if(ui().norail) rail(true);
 // Narrow screens start with the settings folded.
 if(matchMedia('(max-width:919px)').matches) $('ck-setd').removeAttribute('open');
 
+/* ---------- whole tools in their own shadow root, loaded on first use ---------- */
+// A tool file (bereiche/tool_<key>.js) puts {css, html, attrs, url, ext, boot} into TOOLS. Styles and ids stay
+// inside the shadow root; the tool's page script runs with stand-ins for document, location and history, so
+// it neither sees the cockpit's address nor changes it.
+const TOOLS={}, TM={}, TPEND={};
+// Inside the cockpit the tool's own title, language and theme switches and its links to the other tools are
+// not needed; its action row stays. Views that live elsewhere in the cockpit are not offered a second time.
+const TEXTRA=`
+  .sc-root{background:transparent!important;min-height:0!important;overflow:visible!important}
+  .hazard,.fh .fh-eyebrow,.fh .fh-title,.fh .fh-lede,.fh .fh-navd,.fh .fh-seg,.fh #themeBtn{display:none!important}
+  .fh{padding:0 0 6px!important} .fh .fh-actions{margin-top:0!important}
+  .wrap,.fhwrap,main{max-width:none!important;padding-left:0!important;padding-right:0!important}
+  .tab[data-view="kp"]{display:none!important}
+  .ck-tnote{margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-left:4px solid var(--accent);background:var(--panel);color:var(--ink);font-size:14px}`;
+function addScript(src){return new Promise((ok,fail)=>{const s=document.createElement('script'); s.src=src; s.onload=()=>ok(); s.onerror=()=>{s.remove(); fail(new Error(src));}; document.head.appendChild(s);});}
+// Stand-in for `document` inside a tool: lookups and listeners go to the shadow root, <html> and <body> are
+// the tool's root element, everything else is the real document.
+function standIn(sr,el){return {
+  getElementById:id=>sr.getElementById(id), querySelector:s=>sr.querySelector(s), querySelectorAll:s=>sr.querySelectorAll(s),
+  addEventListener:(t,f,o)=>sr.addEventListener(t,f,o), removeEventListener:(t,f,o)=>sr.removeEventListener(t,f,o),
+  dispatchEvent:e=>sr.dispatchEvent(e),
+  createElement:t=>document.createElement(t), createElementNS:(n,t)=>document.createElementNS(n,t),
+  createTextNode:t=>document.createTextNode(t), createDocumentFragment:()=>document.createDocumentFragment(),
+  get documentElement(){return el;}, get body(){return el;}, get head(){return document.head;},
+  get activeElement(){return sr.activeElement;}, readyState:'complete',
+  get title(){return document.title;}, set title(v){}, get hidden(){return document.hidden;}, get visibilityState(){return document.visibilityState;}};}
+// The tool follows the cockpit: theme as an attribute on its root, language through its own switch (so its
+// script redraws and remembers the language as usual).
+function toolFollow(key){const m=TM[key]; if(!m||m.failed) return;
+  m.el.setAttribute('data-theme',root.getAttribute('data-theme')||'dark');
+  const cur=(m.el.getAttribute('data-lang')||m.el.getAttribute('lang')||'de').slice(0,2);
+  if(cur!==lang()){const b=m.root.querySelector(`.fh-seg [data-lang="${lang()}"]`); if(b) b.click();}}
+function toolMount(host,key,extFail){const t=TOOLS[key]; host.textContent=''; const sr=host.attachShadow({mode:'open'});
+  const st=document.createElement('style'); st.textContent=t.css+TEXTRA; sr.appendChild(st);
+  const el=document.createElement('div'); el.className='sc-root'; for(const k in t.attrs) el.setAttribute(k,t.attrs[k]);
+  el.setAttribute('data-theme',root.getAttribute('data-theme')||'dark'); el.innerHTML=t.html; sr.appendChild(el);
+  TM[key]={root:sr,el};
+  const u=new URL(t.url), loc={protocol:u.protocol,origin:u.origin,host:u.host,pathname:u.pathname,search:'',hash:'',href:t.url};
+  try{t.boot(standIn(sr,el),loc,{replaceState(){},pushState(){}});}
+  catch(e){TM[key].failed=true; console.error(e);
+    el.innerHTML=`<p style="color:var(--muted);padding:20px 4px">${esc(T('Dieses Werkzeug ließ sich hier nicht starten:','This tool could not be started here:'))} ${esc(e.message)}. <a href="${esc(t.url)}" target="_blank" rel="noopener" style="color:var(--accent2)">${esc(T('Im bisherigen Tool öffnen ↗','Open in the existing tool ↗'))}</a></p>`;}
+  if(extFail&&!TM[key].failed){const p=document.createElement('p'); p.className='ck-tnote'; p.setAttribute('role','status');
+    p.textContent=T('Die Texterkennung ließ sich nicht laden (keine Verbindung?). Bilder lassen sich erst auswerten, wenn sie geladen ist: Verbindung prüfen und das Cockpit neu laden.','The text recognition could not be loaded (no connection?). Images can only be read once it is there: check the connection and reload the cockpit.');
+    el.prepend(p);}
+  toolFollow(key);}
+// Show a tool in host: load its file on first use, then mount it once. info = {de, en, url} names it for the
+// waiting and the failure message; url is the existing tool as the way out if loading fails.
+function tool(host,key,info){if(TM[key]){toolFollow(key); return Promise.resolve();}
+  if(TPEND[key]) return TPEND[key];
+  const name=esc(T(info.de,info.en));
+  const wait=setTimeout(()=>{host.innerHTML=`<p class="ck-state" role="status">${T('Lädt','Loading')} „${name}“ …</p>`;},150);
+  return TPEND[key]=(async()=>{
+    try{if(!TOOLS[key]) await addScript(`bereiche/tool_${key}.js?v=${VERSION}`); if(!TOOLS[key]) throw new Error(key);}
+    catch(e){clearTimeout(wait); delete TPEND[key];
+      host.innerHTML=`<div class="ck-state" role="alert"><p>${T(`„${name}“ konnte nicht geladen werden. Prüfe die Verbindung; im Offline-Paket muss der Ordner „bereiche“ neben der Startdatei liegen.`,`“${name}” could not be loaded. Check the connection; in the offline package the “bereiche” folder must sit next to the start file.`)}</p>
+        <p><button type="button" class="btn">${T('Erneut versuchen','Try again')}</button> <a class="btn" href="${esc(info.url)}" target="_blank" rel="noopener">${T('Im bisherigen Tool öffnen','Open in the existing tool')} <span aria-hidden="true">↗</span></a></p></div>`;
+      host.querySelector('button').addEventListener('click',()=>tool(host,key,info)); return;}
+    let extFail=false; for(const u of TOOLS[key].ext||[]){try{await addScript(u);}catch(e){extFail=true;}}
+    clearTimeout(wait); toolMount(host,key,extFail);})();}
+// The theme button does not redraw the areas; the tools follow the attribute directly.
+new MutationObserver(()=>{for(const k in TM) toolFollow(k);}).observe(root,{attributes:true,attributeFilter:['data-theme']});
+
 /* ---------- start ---------- */
 redraw(); show(keyFromHash(),false);
 // intent: a jump one area hands to another ({loc, shop} for the cargo ledger); the target clears it.
-return {VERSION,T,esc,nf,lang,register,go,placeholder,fact,toast,intent:null};
+// tool/TOOLS: whole tools as sub-tabs of an area (see above).
+return {VERSION,T,esc,nf,lang,register,go,placeholder,fact,toast,tool,TOOLS,intent:null};
 })();
 """

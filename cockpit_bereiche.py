@@ -40,8 +40,11 @@
 #   Guides sind Dokumente, keine Werkzeuge; ein Rahmen auf die veröffentlichte
 #   Seite ist für sie die passende Form. Damit sind alle Bereiche eingezogen.
 #
-#   Offen: Routen und Waren des Handels-Planers, der Schiffskauf und der
-#   Screenshot-Auswerter (noch Wegweiser am Fuß von Fracht und Flotte).
+#   Seit 0.9.0 sind Routen und Waren des Handels-Planers, der Screenshot-
+#   Auswerter (Unterreiter von Fracht) und der Schiffskauf (Unterreiter von
+#   Flotte) eingezogen: jeweils als ganzes Werkzeug in einer eigenen Datei
+#   bereiche/tool_<key>.js, die die Hülle beim ersten Öffnen lädt
+#   (Cockpit.tool). tool_script() schreibt diese Dateien.
 # =============================================================================
 """Area scripts of the cockpit; each becomes its own lazily loaded file under bereiche/."""
 from __future__ import annotations
@@ -196,11 +199,17 @@ FLOTTE_JS = r"""
 // every render instead of being drawn again.
 let node=null;
 const HEAD=`<h1><span class="de">Flotte</span><span class="en">Fleet</span></h1>
-  <p class="ck-lede"><span class="de">Deine Schiffe und ihre Bestückung. „Schiffe …“ öffnet die Liste aller Schiffe und deine Flotte; die Einkaufsliste unten kannst du als Merker übernehmen.</span><span class="en">Your ships and their loadouts. “Ships …” opens the list of all ships and your fleet; you can take the shopping list at the bottom over as reminders.</span></p>`;
-const FOOT=`<h2 class="ck-h2"><span class="de">Noch im bisherigen Tool</span><span class="en">Still in the existing tool</span></h2>
-  <div class="ck-tools"><div class="ck-tool"><b><span aria-hidden="true">🚀</span> <span class="de">Schiffskauf-Planer</span><span class="en">Ship purchase planner</span></b>
-    <p><span class="de">Preise und Standorte kaufbarer Schiffe, Merkliste mit Budget.</span><span class="en">Prices and locations of buyable ships, wish list with budget.</span></p>
-    <a class="btn" href="__schiffskauf__" target="_blank" rel="noopener"><span class="de">Öffnen</span><span class="en">Open</span> <span aria-hidden="true">↗</span><span class="ck-sr"> (<span class="de">neuer Tab</span><span class="en">new tab</span>)</span></a></div></div>`;
+  <p class="ck-lede"><span class="de">Deine Schiffe und ihre Bestückung. „Schiffe …“ öffnet die Liste aller Schiffe und deine Flotte; die Einkaufsliste unten kannst du als Merker übernehmen. Unter „Schiffskauf“ stehen Preise und Standorte kaufbarer Schiffe.</span><span class="en">Your ships and their loadouts. “Ships …” opens the list of all ships and your fleet; you can take the shopping list at the bottom over as reminders.</span></p>`;
+// Sub-tabs: the planner itself, and the ship purchase planner as a whole tool (loaded on first use).
+const TABS=`<div class="ck-subtabs" role="tablist" aria-label="Flotte / Fleet">
+  <button type="button" role="tab" data-t="kp"><span class="de">Meine Schiffe</span><span class="en">My ships</span></button>
+  <button type="button" role="tab" data-t="schiffskauf"><span class="de">Schiffskauf</span><span class="en">Ship purchase</span></button></div>`;
+const PANES={kp:null,schiffskauf:{de:'Schiffskauf',en:'Ship purchase',url:'__schiffskauf__'}};
+let pane='kp';
+function show(p){pane=p in PANES?p:'kp';
+  node.querySelectorAll('[data-pane]').forEach(h=>{h.hidden=h.dataset.pane!==pane;});
+  node.querySelectorAll('.ck-subtabs [data-t]').forEach(x=>x.setAttribute('aria-selected',String(x.dataset.t===pane)));
+  if(PANES[pane]) Cockpit.tool(node.querySelector(`[data-pane="${pane}"]`),pane,PANES[pane]);}
 // Storage helpers the planner expects from its page.
 function load(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
@@ -209,8 +218,9 @@ function boot(){
 }
 function start(el){
   const st=document.createElement('style'); st.textContent=/*KP_CSS*/''+CSS_HOST; document.head.appendChild(st);
-  node=document.createElement('div'); node.className='ck-kp'; node.innerHTML=HEAD+/*KP_HTML*/''+FOOT;
+  node=document.createElement('div'); node.className='ck-kp'; node.innerHTML=HEAD+TABS+'<div data-pane="kp">'+/*KP_HTML*/''+'</div><div data-pane="schiffskauf" hidden></div>';
   el.replaceChildren(node);
+  node.querySelector('.ck-subtabs').addEventListener('click',e=>{const x=e.target.closest('[data-t]'); if(x) show(x.dataset.t);});
   boot();
   // The planner switches to one column by window width; inside the cockpit its column is narrower than
   // the window, so the switch follows the width of the planner itself.
@@ -233,7 +243,9 @@ const CSS_HOST=`
   .ck-kp.narrow #kp-wires,.ck-kp.midw .kp-stage.wide #kp-wires{display:none}
   .ck-kp.narrow #kpPanel .kp-sd{display:inline}
   body.kp-open{padding-right:0!important}`;
-Cockpit.register('flotte',{render(el){if(!node) start(el); else if(node.parentNode!==el) el.replaceChildren(node);}});
+Cockpit.register('flotte',{render(el){if(!node) start(el); else if(node.parentNode!==el) el.replaceChildren(node);
+  const it=Cockpit.intent; if(it&&it.pane){pane=it.pane; Cockpit.intent=null;}
+  show(pane);}});
 })();
 """
 
@@ -271,14 +283,19 @@ FRACHT_JS = r"""
 // The ledger binds its handlers to its own elements once, so its node is built once and re-attached.
 let node=null, LBX=null;
 const HEAD=`<h1><span class="de">Fracht</span><span class="en">Cargo</span></h1>
-  <p class="ck-lede"><span class="de">Dein Fracht-Logbuch: was wo liegt, Notizen je Ort und Schiff, und was dort zu erledigen ist. Kaufmerker aus der Flotte erscheinen am Ort ihres Händlers.</span><span class="en">Your cargo ledger: what is where, notes per place and ship, and what there is to do. Purchase reminders from the fleet appear at the place of their shop.</span></p>`;
-const FOOT=`<h2 class="ck-h2"><span class="de">Noch im bisherigen Tool</span><span class="en">Still in the existing tool</span></h2>
-  <div class="ck-tools"><div class="ck-tool"><b><span aria-hidden="true">📈</span> <span class="de">Handels-Planer</span><span class="en">Trade planner</span></b>
-    <p><span class="de">Routen, alle Waren, Kauf- und Verkaufsorte, „Aufs Handy“. Dort nennt das Logbuch auch den besten Verkaufsort je Ware.</span><span class="en">Routes, all commodities, buy and sell places, “To the phone”. There the ledger also names the best sell place per commodity.</span></p>
-    <a class="btn" href="__handel__" target="_blank" rel="noopener"><span class="de">Öffnen</span><span class="en">Open</span> <span aria-hidden="true">↗</span><span class="ck-sr"> (<span class="de">neuer Tab</span><span class="en">new tab</span>)</span></a></div>
-  <div class="ck-tool"><b><span aria-hidden="true">📷</span> <span class="de">Screenshot-Auswerter</span><span class="en">Screenshot reader</span></b>
-    <p><span class="de">Liest Preise aus Screenshots der Handelskonsolen.</span><span class="en">Reads prices from screenshots of the trade consoles.</span></p>
-    <a class="btn" href="__auswerter__" target="_blank" rel="noopener"><span class="de">Öffnen</span><span class="en">Open</span> <span aria-hidden="true">↗</span><span class="ck-sr"> (<span class="de">neuer Tab</span><span class="en">new tab</span>)</span></a></div></div>`;
+  <p class="ck-lede"><span class="de">Dein Fracht-Logbuch: was wo liegt, Notizen je Ort und Schiff, und was dort zu erledigen ist. Kaufmerker aus der Flotte erscheinen am Ort ihres Händlers. Daneben: Routen und Waren, und der Auswerter für Konsolen-Screenshots.</span><span class="en">Your cargo ledger: what is where, notes per place and ship, and what there is to do. Purchase reminders from the fleet appear at the place of their shop.</span></p>`;
+// Sub-tabs: the ledger itself; routes and commodities and the screenshot reader as whole tools (loaded on first use).
+const TABS=`<div class="ck-subtabs" role="tablist" aria-label="Fracht / Cargo">
+  <button type="button" role="tab" data-t="lb"><span class="de">Logbuch</span><span class="en">Ledger</span></button>
+  <button type="button" role="tab" data-t="handel"><span class="de">Routen &amp; Waren</span><span class="en">Routes &amp; commodities</span></button>
+  <button type="button" role="tab" data-t="auswerter"><span class="de">Auswerter</span><span class="en">Screenshot reader</span></button></div>`;
+const PANES={lb:null,handel:{de:'Routen & Waren',en:'Routes & commodities',url:'__handel__'},
+  auswerter:{de:'Auswerter',en:'Screenshot reader',url:'__auswerter__'}};
+let pane='lb';
+function show(p){pane=p in PANES?p:'lb';
+  node.querySelectorAll('[data-pane]').forEach(h=>{h.hidden=h.dataset.pane!==pane;});
+  node.querySelectorAll('.ck-subtabs [data-t]').forEach(x=>x.setAttribute('aria-selected',String(x.dataset.t===pane)));
+  if(PANES[pane]) Cockpit.tool(node.querySelector(`[data-pane="${pane}"]`),pane,PANES[pane]);}
 // What the ledger expects from its page.
 function toast(m){Cockpit.toast(m);}
 function showView(){}
@@ -294,18 +311,19 @@ const CSS_HOST=`
   .ck-lb.narrow #view-ledger .lb-mid{order:-1}`;
 function start(el){
   const st=document.createElement('style'); st.textContent=/*LB_CSS*/''+CSS_HOST; document.head.appendChild(st);
-  node=document.createElement('div'); node.className='ck-lb'; node.innerHTML=HEAD+/*LB_HTML*/''+FOOT;
+  node=document.createElement('div'); node.className='ck-lb'; node.innerHTML=HEAD+TABS+'<div data-pane="lb">'+/*LB_HTML*/''+'</div><div data-pane="handel" hidden></div><div data-pane="auswerter" hidden></div>';
   el.replaceChildren(node);
   node.querySelector('#view-ledger').classList.remove('hide');
+  node.querySelector('.ck-subtabs').addEventListener('click',e=>{const x=e.target.closest('[data-t]'); if(x) show(x.dataset.t);});
   LBX=boot();
   new ResizeObserver(()=>{const w=node.clientWidth; if(!w) return; node.classList.toggle('narrow',w<720); node.classList.toggle('midw',w<980);}).observe(node);
 }
 // Every draw (language, reminders, fleet) takes over fleet changes and redraws the ledger.
 Cockpit.register('fracht',{render(el){if(!node) start(el); else if(node.parentNode!==el) el.replaceChildren(node);
-  if(!LBX) return;
+  if(!LBX){show(pane); return;}
   // A jump from the overview ("In the ledger"): select that place, found by its id or by the shop text.
-  const it=Cockpit.intent; if(it){Cockpit.intent=null; const loc=it.loc||(LBX.shopPlace?LBX.shopPlace(it.shop):null); if(loc) LBX.openLoc(loc);}
-  if(LBX.sync) LBX.sync(); LBX.render();}});
+  const it=Cockpit.intent; if(it){Cockpit.intent=null; if(it.pane) pane=it.pane; const loc=it.loc||(LBX.shopPlace?LBX.shopPlace(it.shop):null); if(loc){pane='lb'; LBX.openLoc(loc);}}
+  show(pane); if(LBX.sync) LBX.sync(); LBX.render();}});
 })();
 """
 
@@ -493,6 +511,23 @@ def werkstatt_script(tools: dict[str, dict]) -> str:
     if WERKSTATT_JS.count("/*TOOLS*/") != 1:
         raise ValueError("Marke /*TOOLS*/ fehlt in der Werkstatt-Vorlage")
     return WERKSTATT_JS.replace("/*TOOLS*/", ",\n".join(parts)).strip() + "\n"
+
+
+def tool_script(key: str, tool: dict) -> str:
+    """Return the script of one whole tool; the shell loads it on first use and mounts it in a shadow root.
+
+    Args:
+        key: Tool key (file ``bereiche/tool_<key>.js``).
+        tool: ``{"css", "html", "attrs", "js", "url", "ext"}`` as produced by the build.
+
+    Returns:
+        JavaScript source that puts the tool into ``Cockpit.TOOLS``.
+    """
+    dump = lambda v: json.dumps(v, ensure_ascii=False)  # noqa: E731
+    return (f"/* ---------- whole tool for the cockpit: {key} ---------- */\n"
+            f"Cockpit.TOOLS[{dump(key)}]={{css:{dump(tool['css'])},html:{dump(tool['html'])},attrs:{dump(tool['attrs'])},"
+            f"url:{dump(tool['url'])},ext:{dump(tool.get('ext', []))},\n"
+            f"boot:function(document,location,history){{\n{tool['js']}\n}}}};\n")
 
 
 #: Guides area: the index of the guide site in a shadow root (its cards, in its own styles), and a reader

@@ -2,6 +2,23 @@
 
 Alle nennenswerten Änderungen an diesem Projekt. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.0.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.9.0] – 2026-11-26
+
+### Hinzugefügt
+- **Routen und Waren im Cockpit.** „Fracht“ hat jetzt drei Unterreiter: Logbuch, **Routen & Waren** (Routen, alle Waren, nach Verkaufsort, nach Kaufort) und **Auswerter**.
+- **Screenshot-Auswerter im Cockpit.** Der Unterreiter „Auswerter“ liest Preise aus Screenshots der Handelskonsolen, wie die bisherige Seite. Die Texterkennung lädt er aus dem Netz.
+- **Schiffskauf im Cockpit.** „Flotte“ hat zwei Unterreiter: Meine Schiffe und **Schiffskauf** (Preise und Standorte kaufbarer Schiffe, Merkliste mit Budget).
+- **Adresse je Unterreiter.** `#/fracht/handel`, `#/fracht/auswerter` und `#/flotte/schiffskauf` öffnen den Unterreiter direkt.
+
+### Geändert
+- Die Verweise „Noch im bisherigen Tool“ am Fuß von Fracht und Flotte entfallen.
+- Die drei Werkzeuge laden erst, wenn du ihren Unterreiter öffnest. Schlägt das fehl, steht dort eine Meldung mit „Erneut versuchen“ und einem Link zur bisherigen Seite.
+
+### Bekannt
+- Der Unterreiter „Routen & Waren“ zeigt die Daten von star-head. Eigene Auswerter-Exporte, die du lokal in den Handels-Planer einbaust, sind hier nicht enthalten.
+- „Aufs Handy“ gibt es weiterhin nur im Handels-Planer.
+- Ohne Verbindung startet der Auswerter, kann aber keine Bilder lesen; ein Hinweis steht dann oben im Unterreiter.
+
 ## [0.8.0] – 2026-11-26
 
 ### Hinzugefügt

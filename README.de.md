@@ -8,7 +8,7 @@ Eine App für meine Star-Citizen-Werkzeuge: Flotte, Fracht, Werkstatt, Guides un
 
 ## Stand
 
-Stand Version 0.8.0, alle sechs Bereiche sind eingezogen:
+Stand Version 0.9.0, alle sechs Bereiche sind eingezogen:
 
 - **Seitenleiste** mit den Bereichen Übersicht, Flotte, Fracht, Werkstatt, Guides und Pilot. Jeder Bereich wird beim ersten Öffnen geladen.
 - **Merker-Leiste** rechts, immer sichtbar: eigene Merker anlegen, abhaken, entfernen.
@@ -18,11 +18,11 @@ Stand Version 0.8.0, alle sechs Bereiche sind eingezogen:
 - **Pilot ist eingezogen:** Ruf je Organisation und Spielsitzungen aus den Spiel-Logs (nur lokal gelesen); der Ruf steht auch im Lagebild.
 - **Werkstatt ist eingezogen:** Bauplan-Planer und Wikelo-Planer als Unterreiter, jeder in einem abgeschirmten Bereich der Seite.
 - **Guides sind eingezogen:** Übersicht aller Feldhandbücher und Flyer; ein Guide öffnet sich im Cockpit in einem Leserahmen.
-- **Noch als Verweis:** Routen und Warenlisten, Schiffskauf und Screenshot-Auswerter (am Fuß von Fracht und Flotte).
+- **Als Unterreiter:** Routen und Warenlisten sowie der Screenshot-Auswerter unter Fracht, der Schiffskauf unter Flotte. Jedes ist eine eigene Datei `bereiche/tool_<schlüssel>.js`, die beim ersten Öffnen lädt.
 
 - **Sicherungsdatei für alles:** speichern, einlesen mit Vergleich vorher/nachher, ein Rückweg. Sie trägt die Daten ins Offline-Paket oder auf einen zweiten Rechner.
 
-Als Nächstes: Routen, Schiffskauf und Auswerter.
+Als Nächstes: die Einzelseiten ablösen, „Aufs Handy“ im Cockpit.
 
 ## Die bisherigen Tools
 
@@ -37,7 +37,7 @@ Online liegen alle unter derselben Adresse (`jaegerfeld.github.io`) und teilen s
 
 ## Bauen
 
-Nur Standardbibliothek. Der Bereich Flotte braucht die Quelle des Komponenten-Planers: das Repo [StarCitizen-Schiffskauf-Planer](https://github.com/Jaegerfeld/StarCitizen-Schiffskauf-Planer) neben diesem Repo (oder Pfad in `SC_SCHIFFSKAUF`). Der Bereich Fracht braucht genauso das Repo [StarCitizen-Handels-Planer](https://github.com/Jaegerfeld/StarCitizen-Handels-Planer) (`SC_HANDEL`). Die Werkstatt nimmt die veröffentlichten Seiten von [Bauplan-Planer](https://github.com/Jaegerfeld/StarCitizen-Bauplan-Planer) und [Wikelo-Planer](https://github.com/Jaegerfeld/StarCitizen-Wikelo-Planer) (mit `--cache` die gebauten Dateien aus den Nachbar-Repos). Ohne eine Quelle oder ohne Netz baut das Skript den Bereich als Wegweiser.
+Nur Standardbibliothek. Der Bereich Flotte braucht die Quelle des Komponenten-Planers: das Repo [StarCitizen-Schiffskauf-Planer](https://github.com/Jaegerfeld/StarCitizen-Schiffskauf-Planer) neben diesem Repo (oder Pfad in `SC_SCHIFFSKAUF`). Der Bereich Fracht braucht genauso das Repo [StarCitizen-Handels-Planer](https://github.com/Jaegerfeld/StarCitizen-Handels-Planer) (`SC_HANDEL`). Die Werkstatt nimmt die veröffentlichten Seiten von [Bauplan-Planer](https://github.com/Jaegerfeld/StarCitizen-Bauplan-Planer) und [Wikelo-Planer](https://github.com/Jaegerfeld/StarCitizen-Wikelo-Planer) (mit `--cache` die gebauten Dateien aus den Nachbar-Repos). Routen & Waren und Schiffskauf baut das Skript aus den Vorlagen der beiden Repos, ohne die Teile, die schon im Cockpit wohnen; der Auswerter ist seine veröffentlichte Seite. Ohne eine Quelle oder ohne Netz baut das Skript den Bereich als Wegweiser.
 
 ```bash
 python cockpit_bauen.py          # schreibt cockpit/SC_Cockpit.html und cockpit/bereiche/*.js
