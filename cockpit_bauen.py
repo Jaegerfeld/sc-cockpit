@@ -193,7 +193,13 @@ WERKZEUGE = {
                 "https://jaegerfeld.github.io/StarCitizen-Bauplan-Planer/", "SC_BAUPLAN", "_bauplan"),
     "wikelo": ("StarCitizen-Wikelo-Planer", "SC_Wikelo_Planer.html",
                "https://jaegerfeld.github.io/StarCitizen-Wikelo-Planer/", "SC_WIKELO", "_wikelo"),
+    "auswerter": ("StarCitizen-Screenshot-Auswerter", "SC_Screenshot_Auswerter.html",
+                  "https://jaegerfeld.github.io/StarCitizen-Screenshot-Auswerter/", "SC_AUSWERTER", "_auswerter"),
 }
+#: The two whole pages of the workshop.
+WERKSTATT = ("bauplan", "wikelo")
+#: Modules every tool repo has under the same name (byte-identical helpers, and each tool's own version).
+SHARED = ("version", "kopfzeile", "sc_design", "flotte")
 
 
 def tool_page(key: str, use_cache: bool) -> str:
@@ -250,8 +256,9 @@ def split_page(html: str, base: str) -> dict:
         base: Published address of the tool; relative ``bilder/`` paths in its data are made absolute.
 
     Returns:
-        ``{"css", "html", "attrs", "js", "url"}``: styles for the shadow root, body markup without the
-        page scripts (JSON data blocks stay), attributes of ``<html>``, the page scripts in order.
+        ``{"css", "html", "attrs", "js", "url", "ext"}``: styles for the shadow root, body markup without
+        the page scripts (JSON data blocks stay), attributes of ``<html>``, the page scripts in order, and
+        the addresses of external scripts the page loads (they must be loaded before the page script).
 
     Raises:
         ValueError: If the page has no body or no script.
@@ -269,7 +276,8 @@ def split_page(html: str, base: str) -> dict:
     attrs = dict(re.findall(r'([\w-]+)="([^"]*)"', tag.group(1))) if tag else {}
     absolute = lambda s: re.sub(r'(["\'`])bilder/', lambda k: k.group(1) + base + "bilder/", s)  # noqa: E731
     return {"css": shadow_css(css), "html": absolute(script.sub("", body)), "attrs": attrs,
-            "js": absolute("\n;\n".join(js)), "url": base}
+            "js": absolute("\n;\n".join(js)), "url": base,
+            "ext": re.findall(r'<script[^>]*\ssrc="([^"]+)"', html)}
 
 
 #: Published guide site; its index page becomes the guides area.
@@ -326,10 +334,112 @@ def werkstatt_js(use_cache: bool) -> str:
     Raises:
         OSError, ValueError: If a page is unavailable or cannot be split.
     """
-    tools = {key: split_page(tool_page(key, use_cache), WERKZEUGE[key][2]) for key in WERKZEUGE}
+    tools = {key: split_page(tool_page(key, use_cache), WERKZEUGE[key][2]) for key in WERKSTATT}
     sizes = ", ".join(f"{k} {len(v['js']) // 1024} KB Skript" for k, v in tools.items())
     print(f"  Werkstatt: {sizes}.")
     return cb.werkstatt_script(tools)
+
+
+def foreign(src: Path, name: str):
+    """Import the build module of a lending tool together with that tool's own shared modules.
+
+    The tools' build scripts import ``version``, ``kopfzeile``, ``sc_design`` and ``flotte`` by the same
+    names this repo uses. For the import the tool's folder goes first and this repo's modules step aside,
+    so the tool's header carries its own version; afterwards everything is as before.
+
+    Args:
+        src: Folder of the tool's sources.
+        name: Module name of its build script.
+
+    Returns:
+        The imported module.
+    """
+    saved = {k: sys.modules.pop(k) for k in SHARED if k in sys.modules}
+    sys.path.insert(0, str(src))
+    try:
+        return importlib.import_module(name)
+    finally:
+        sys.path.remove(str(src))
+        for k in SHARED:
+            sys.modules.pop(k, None)
+        sys.modules.update(saved)
+
+
+def handel_tool(use_cache: bool) -> dict:
+    """Build routes and commodities of the Handels-Planer as a whole tool.
+
+    The parts that already live in the cockpit (cargo ledger, sessions, reputation, phone transfer) are
+    left out. Private screenshot-reader exports (``eigene_daten``) are never read here.
+
+    Args:
+        use_cache: Use that repo's ``handel_cache.json`` instead of calling star-head.
+
+    Returns:
+        The tool as from ``split_page``.
+
+    Raises:
+        OSError, ValueError, KeyError, ImportError: If the sources or the data are unavailable.
+    """
+    hb = foreign(handel_dir(), "handels_planer_bauen")
+    rows, summary = hb.load_rows(use_cache)
+    data = hb.build_data(rows, summary)
+    payload = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+    # The page switches its views by id; the views that moved out keep an empty stand-in.
+    stubs = "".join(f'<div id="view-{k}" class="hide"></div>' for k in ("ledger", "sessions", "rep"))
+    html = hb.fill_header(hb.HTML_TEMPLATE)
+    for mark, value in [("/*LB_CSS*/", ""), ("<!--LB_TAB-->\n", ""), ("<!--LB_HTML-->", stubs), ("/*LB_JS*/", ""),
+                        ("/*SZ_CSS*/", ""), ("<!--SZ_TAB-->\n", ""), ("/*__DATA__*/{}", payload)]:
+        if html.count(mark) != 1:
+            raise ValueError(f"Marke {mark} fehlt in der Vorlage des Handels-Planers")
+        html = html.replace(mark, value)
+    html = html.replace("__DATA_URL__", hb.DATA_URL)
+    print(f"  Routen und Waren: {len(rows)} Preiszeilen.")
+    return split_page(html, cb.URL["handel"])
+
+
+def schiffskauf_tool(use_cache: bool) -> dict:
+    """Build the ship purchase planner as a whole tool, without the component planner (it is the fleet area).
+
+    Args:
+        use_cache: Use that repo's ``uex_cache.json`` instead of calling UEX.
+
+    Returns:
+        The tool as from ``split_page``.
+
+    Raises:
+        OSError, ValueError, KeyError, ImportError: If the sources or the data are unavailable.
+    """
+    src = schiffskauf_dir()
+    if not src:
+        raise ImportError("Quelle StarCitizen-Schiffskauf-Planer nicht gefunden")
+    sb = foreign(src, "schiffskauf_planer_bauen")
+    data = sb.build_data(sb.load_raw(use_cache))
+    payload = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+    html = sb.fill_header(sb.bilingual(sb.HTML_TEMPLATE))
+    for mark, value in [("/*KP_CSS*/", ""), ("<!--KP_PANEL-->", ""), ("/*KP_JS*/", ""), ("/*__DATA__*/{}", payload)]:
+        if html.count(mark) != 1:
+            raise ValueError(f"Marke {mark} fehlt in der Vorlage des Schiffskauf-Planers")
+        html = html.replace(mark, value)
+    html = html.replace("__DATA_URL__", sb.DATA_URL)
+    print(f"  Schiffskauf: {len(data['ships'])} Fahrzeuge, {len(data['locs'])} Standorte.")
+    return split_page(html, cb.URL["schiffskauf"])
+
+
+def auswerter_tool(use_cache: bool) -> dict:
+    """Take the finished page of the Screenshot-Auswerter as a whole tool.
+
+    Args:
+        use_cache: Take the built file from the repo next to this one instead of the published page.
+
+    Returns:
+        The tool as from ``split_page``.
+
+    Raises:
+        OSError, ValueError: If the page is unavailable or cannot be split.
+    """
+    tool = split_page(tool_page("auswerter", use_cache), WERKZEUGE["auswerter"][2])
+    print(f"  Auswerter: {len(tool['js']) // 1024} KB Skript, {len(tool['ext'])} externe Bibliothek(en).")
+    return tool
 
 
 def fracht_js(use_cache: bool) -> str:
@@ -414,6 +524,14 @@ def build(make_zip: bool = False, use_cache: bool = False) -> list[Path]:
     keys = [k for k, *_ in cs.AREAS]
     if sorted(scripts) != sorted(keys):
         raise ValueError(f"Bereiche und Seitenleiste passen nicht zusammen: {sorted(scripts)} / {sorted(keys)}")
+    # Whole tools shown as sub-tabs: one file each, loaded on first use. A missing file is not fatal: the
+    # sub-tab then says so and links to the existing tool.
+    for key, make, what in (("handel", handel_tool, "Routen und Waren"), ("schiffskauf", schiffskauf_tool, "Schiffskauf"),
+                            ("auswerter", auswerter_tool, "Auswerter")):
+        try:
+            scripts[f"tool_{key}"] = cb.tool_script(key, make(use_cache))
+        except (OSError, ValueError, KeyError, ImportError, AttributeError) as e:
+            print(f"  WARNUNG: {what} nicht gebaut ({e}); der Unterreiter verweist auf das bisherige Tool.", file=sys.stderr)
     (OUT / "bereiche").mkdir(parents=True, exist_ok=True)
     for old in (OUT / "bereiche").glob("*.js"):
         if old.stem not in scripts:

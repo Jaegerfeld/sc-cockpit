@@ -11,7 +11,7 @@ The cockpit brings the Star Citizen tools together in one app. It is under const
 - **Pilot:** your reputation per organisation and your play sessions.
 - **Workshop:** the blueprint planner and the Wikelo planner.
 - **Guides:** all field handbooks and flyers; a guide opens right inside the cockpit.
-- **Still in the existing tool:** routes and commodity lists, ship purchase and the screenshot reader. At the bottom of "Cargo" and "Fleet", **Open** leads there (new tab).
+- **As sub-tabs:** routes and commodity lists and the screenshot reader under "Cargo", ship purchase under "Fleet". They load when first opened.
 - **Reminders on the right:** your list to tick off. It stays visible in every area. **Collapse »** turns it into a narrow strip; a click on it opens it again.
 - **Bottom of the sidebar:** language, light/dark, this manual, "What's new?" and the offline package. On phones and tablets they sit under **Settings**.
 
@@ -52,7 +52,7 @@ Reminders are kept for ships of your fleet only. Add a ship in preview with **+ 
 4. Places and ships with open reminders carry **☑ n reminders** in the lists. The filter **with cargo or a note only** includes them.
 5. Below that is the **Notes** field for free text, as before.
 
-You book cargo as in the trade planner: **+ Book cargo in**, click or drag a post to move it. Routes, commodity lists and "To the phone" are still in the trade planner.
+You book cargo as in the trade planner: **+ Book cargo in**, click or drag a post to move it. The sub-tabs **Routes & commodities** and **Screenshot reader** next to it work like the existing pages; their own manual is there under "Manual + How-To". "To the phone" is still only in the trade planner.
 
 ## Pilot: reputation and sessions
 

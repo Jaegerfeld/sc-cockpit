@@ -11,7 +11,7 @@ Das Cockpit führt die Star-Citizen-Werkzeuge in einer App zusammen. Es ist im A
 - **Pilot:** dein Ruf je Organisation und deine Spielsitzungen.
 - **Werkstatt:** der Bauplan-Planer und der Wikelo-Planer.
 - **Guides:** alle Feldhandbücher und Flyer; ein Guide öffnet sich direkt im Cockpit.
-- **Noch im bisherigen Tool:** Routen und Warenlisten, der Schiffskauf und der Screenshot-Auswerter. Am Fuß von „Fracht“ und „Flotte“ führt **Öffnen** dorthin (neuer Tab).
+- **Als Unterreiter:** Routen und Warenlisten sowie der Screenshot-Auswerter unter „Fracht“, der Schiffskauf unter „Flotte“. Sie laden beim ersten Öffnen.
 - **Merker rechts:** deine Liste zum Abhaken. Sie bleibt in jedem Bereich sichtbar. **Einklappen »** macht sie zum schmalen Streifen, ein Klick darauf öffnet sie wieder.
 - **Unten in der Seitenleiste:** Sprache, Hell/Dunkel, diese Anleitung, „Was ist neu?“ und das Offline-Paket. Auf Handy und Tablet stehen sie unter **Einstellungen**.
 
@@ -52,7 +52,7 @@ Merker gibt es nur für Schiffe deiner Flotte. Ein Schiff in der Vorschau fügst
 4. Orte und Schiffe mit offenen Merkern tragen in den Listen **☑ n Merker**. Der Filter **nur mit Fracht oder Notiz** zeigt sie mit an.
 5. Darunter steht wie gewohnt das Feld **Notizen** für freien Text.
 
-Fracht buchst du wie im Handels-Planer: **+ Fracht einbuchen**, Posten anklicken oder ziehen zum Verschieben. Routen, Warenlisten und „Aufs Handy“ sind noch im Handels-Planer.
+Fracht buchst du wie im Handels-Planer: **+ Fracht einbuchen**, Posten anklicken oder ziehen zum Verschieben. Die Unterreiter **Routen & Waren** und **Auswerter** daneben arbeiten wie die bisherigen Seiten; ihre eigene Anleitung steht dort unter „Anleitung + How-To“. „Aufs Handy“ gibt es weiterhin nur im Handels-Planer.
 
 ## Pilot: Ruf und Sitzungen
 
