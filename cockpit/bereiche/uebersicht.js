@@ -56,6 +56,15 @@ function ruf(){const d=read('sc_cockpit_ruf'), rows=d&&Array.isArray(d.o)?d.o:[]
   return `<ul class="ck-plist">${list.map(r=>`<li><b>${r.fav?'★ ':''}${C.jump('org',r.org,r.org)}</b><small>${esc(r.rank||'')}${r.next?` → ${esc(r.next)}`:''}</small><span>${r.pct==null?T('höchster Rang','top rank'):'≈ '+r.pct+' %'}</span></li>`).join('')}</ul>
     <p class="ck-pmore">${T('Schätzung, Stand','Estimate, as of')} ${esc(when(d.t))}.</p>`;}
 
+// Important items of the ledger's items view: how many, and the five with the most pieces.
+function dinge(){const led=read('scha_ledger_v1'), it=(led&&Array.isArray(led.items)?led.items:[]).filter(x=>x&&x.n&&x.c>0);
+  if(!it.length) return `<p class="ck-pempty">${T('Noch kein Gegenstand eingetragen. Unter „Fracht → Gegenstände“ hältst du fest, wo Medaillen, Scrips und Ressourcen liegen.','No item entered yet. Under “Cargo → Items” you note where medals, scrip and resources are.')}</p>`;
+  const by={}; for(const x of it){const k=String(x.n).toLowerCase(), g=by[k]||(by[k]={n:x.n,c:0,l:new Set()}); g.c+=+x.c||0; g.l.add(x.l);}
+  const all=Object.values(by), places=new Set(it.map(x=>x.l)).size, top=all.sort((a,b)=>b.c-a.c||a.n.localeCompare(b.n)).slice(0,5);
+  return `<p class="ck-big">${nf(all.length)} <small>${T(all.length===1?'Gegenstand':'Gegenstände',all.length===1?'item':'items')} ${T('an','at')} ${nf(places)} ${T(places===1?'Ort':'Orten',places===1?'place':'places')}</small></p>
+    <ul class="ck-plist">${top.map(g=>`<li><b>${C.jump('item',g.n,g.n)}</b><span>${nf(g.c)} ${T('Stück',g.c===1?'piece':'pieces')} · ${nf(g.l.size)} ${T(g.l.size===1?'Ort':'Orte',g.l.size===1?'place':'places')}</span></li>`).join('')}</ul>
+    ${all.length>5?`<p class="ck-pmore">${T(`und ${all.length-5} weitere`,`and ${all.length-5} more`)}</p>`:''}`;}
+
 const panel=(cls,title,body,key,linkTxt)=>`<section class="ck-panel ${cls}"><h2>${esc(title)}</h2>${body}${key?`<a class="ck-plink" href="#/${key}">${esc(linkTxt)} <span aria-hidden="true">→</span></a>`:''}</section>`;
 function render(el){const first=!SCData.items().length&&!(window.SCFleet&&SCFleet.read().ships.length)&&!read('scha_ledger_v1');
   el.innerHTML=`<h1>${T('Übersicht','Overview')}</h1>
@@ -65,6 +74,7 @@ function render(el){const first=!SCData.items().length&&!(window.SCFleet&&SCFlee
       ${panel('ck-ptodo',T('Zu erledigen','To do')+(SCData.open().length?` (${SCData.open().length})`:''),todo())}
       ${panel('',T('Flotte','Fleet'),flotte(),'flotte',T('Zur Flotte','To the fleet'))}
       ${panel('',T('Fracht','Cargo'),fracht(),'fracht',T('Zum Logbuch','To the ledger'))}
+      ${panel('',T('Gegenstände','Items'),dinge(),'fracht/items',T('Zu den Gegenständen','To the items'))}
       ${panel('ck-psess',T('Letzte Sitzung','Last session'),sitzung(),'pilot',T('Zu den Sitzungen','To the sessions'))}
       ${panel('',T('Ruf','Reputation'),ruf(),'pilot',T('Zum Ruf','To the reputation'))}
       ${panel('',T('Werkstatt','Workshop'),`<p class="ck-pempty">${T('Baupläne planen und den Tauschhandel bei Wikelo verfolgen.','Plan blueprints and track the trade with Wikelo.')}</p>`,'werkstatt',T('Zur Werkstatt','To the workshop'))}

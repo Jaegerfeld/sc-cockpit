@@ -2,6 +2,13 @@
 
 Alle nennenswerten Änderungen an diesem Projekt. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.0.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.12.0] – 2026-11-27
+
+### Hinzugefügt
+- **Fracht: Unterreiter „Gegenstände“.** Neben dem Logbuch steht das Buch für wichtige Gegenstände (aus dem Handels-Planer 1.27.0): Medaillen, MG Scrip, Tauschware und Ressourcen mit Qualität, je Ort oder Schiff, mit Suche und Gruppierung. Adresse: `#/fracht/items`.
+- **Übersicht: Feld „Gegenstände“** mit der Zahl der Gegenstände und Orte und den fünf mit den meisten Stück. Die Namen sind Sprungpunkte: Ein Klick zeigt den Gegenstand an allen Orten.
+- Die Gegenstände liegen im Logbuch-Stand. Sicherungsdatei und „Aufs Handy“ nehmen sie deshalb ohne weiteres Zutun mit.
+
 ## [0.11.0] – 2026-11-27
 
 ### Hinzugefügt

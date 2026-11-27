@@ -7,7 +7,7 @@ The cockpit brings the Star Citizen tools together in one app. It is under const
 - **Sidebar on the left:** switches between **Overview**, **Fleet**, **Cargo**, **Workshop**, **Guides** and **Pilot**. On narrow screens it is a row at the top.
 - **Overview:** your status board. At the top is **To do** with all open reminders by place, below it fleet, cargo and the last session.
 - **Fleet:** your ships and the component planner. Here you swap parts and take the shopping list over as reminders.
-- **Cargo:** the cargo ledger with notes and the reminders at their place.
+- **Cargo:** the cargo ledger with notes and the reminders at their place, and next to it **Items**: where medals, scrip and resources are.
 - **Pilot:** your reputation per organisation and your play sessions.
 - **Workshop:** the blueprint planner and the Wikelo planner.
 - **Guides:** all field handbooks and flyers; a guide opens right inside the cockpit.
