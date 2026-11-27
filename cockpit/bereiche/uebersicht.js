@@ -30,12 +30,14 @@ function flotte(){const fleet=window.SCFleet?SCFleet.read().ships:[], led=read('
 // Cargo: totals and the places holding the most.
 function fracht(){const led=read('scha_ledger_v1'), stock=(led&&Array.isArray(led.stock)?led.stock:[]).filter(p=>p&&p.n>0);
   const notes=led&&led.notes?Object.keys(led.notes).filter(k=>String(led.notes[k]||'').trim()).length:0;
-  if(!stock.length) return `<p class="ck-pempty">${T('Keine Fracht im Logbuch.','No cargo in the ledger.')}${notes?` ${nf(notes)} ${T(notes===1?'Notiz':'Notizen',notes===1?'note':'notes')}.`:''}</p>`;
+  if(!stock.length) return `<p class="ck-pempty">${T('Keine Fracht im Logbuch.','No cargo in the ledger.')}${notes?` ${nf(notes)} ${T(notes===1?'Notiz':'Notizen',notes===1?'note':'notes')}.`:''}</p>${typeof led?.home==='string'?`<ul class="ck-plist"><li><b>🏠 ${C.jump('loc',led.home,led.home.slice(2).split('|').pop())}</b><span>${T('Homebase','Home base')}</span></li></ul>`:''}`;
   const by={}; for(const p of stock) by[p.l]=(by[p.l]||0)+p.z*p.n;
-  const total=Object.values(by).reduce((a,b)=>a+b,0), top=Object.entries(by).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  const name=l=>{if(l[0]==='s'){const s=(led.ships||[]).find(x=>'s:'+x.id===l); return '🚀 '+C.jump('loc',l,s?s.n:'?');} return '📍 '+C.jump('loc',l,l.slice(2).split('|').pop());};
+  // The home base of the ledger leads the list, then the places holding the most.
+  const home=typeof led.home==='string'?led.home:null;
+  const total=Object.values(by).reduce((a,b)=>a+b,0), top=Object.entries(by).sort((a,b)=>(b[0]===home)-(a[0]===home)||b[1]-a[1]).slice(0,5);
+  const name=l=>{if(l[0]==='s'){const s=(led.ships||[]).find(x=>'s:'+x.id===l); return '🚀 '+C.jump('loc',l,s?s.n:'?');} return (l===home?'🏠 ':'📍 ')+C.jump('loc',l,l.slice(2).split('|').pop());};
   return `<p class="ck-big">${nf(total)} SCU <small>${T('an','at')} ${nf(Object.keys(by).length)} ${T(Object.keys(by).length===1?'Ort':'Orten',Object.keys(by).length===1?'place':'places')}${notes?` · ${nf(notes)} ${T(notes===1?'Notiz':'Notizen',notes===1?'note':'notes')}`:''}</small></p>
-    <ul class="ck-plist">${top.map(([l,s])=>`<li><b>${name(l)}</b><span>${nf(s)} SCU</span></li>`).join('')}</ul>`;}
+    <ul class="ck-plist">${home&&!by[home]?`<li><b>${name(home)}</b><span>${T('Homebase','Home base')}</span></li>`:''}${top.map(([l,s])=>`<li><b>${name(l)}</b><span>${nf(s)} SCU</span></li>`).join('')}</ul>`;}
 
 // Ship of the fleet that an internal ship name of the game log ("ANVL_Hornet_F7C_Mk2") means: the maker code
 // is dropped, the rest must all occur in the model name ("Anvil F7C Hornet Mk II"); of several models that

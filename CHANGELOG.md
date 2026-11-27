@@ -2,6 +2,14 @@
 
 Alle nennenswerten Änderungen an diesem Projekt. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.0.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.14.0] – 2026-11-27
+
+### Hinzugefügt
+- **Homebase.** Im Fracht-Logbuch lässt sich ein Ort als Homebase merken (aus dem Handels-Planer 1.29.0). Er steht dann in allen Ortslisten und Zielauswahlen an erster Stelle, markiert mit 🏠. In der Übersicht führt die Homebase das Feld „Fracht“ an, auch wenn dort gerade nichts liegt.
+
+### Geändert
+- **Fracht → Gegenstände: Ortsauswahl wie beim Logbuch.** Statt eines Auswahlfelds wählst du links ein Schiff oder rechts einen Ort; die Mitte zeigt die Gegenstände dort und das Formular. Ohne gewählten Ort zeigt sie alle Gegenstände mit Suche und Gruppierung. Der gewählte Ort bleibt beim Wechsel zwischen Logbuch und Gegenständen erhalten.
+
 ## [0.13.1] – 2026-11-27
 
 ### Behoben
