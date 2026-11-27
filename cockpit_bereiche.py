@@ -104,14 +104,29 @@ function fracht(){const led=read('scha_ledger_v1'), stock=(led&&Array.isArray(le
   return `<p class="ck-big">${nf(total)} SCU <small>${T('an','at')} ${nf(Object.keys(by).length)} ${T(Object.keys(by).length===1?'Ort':'Orten',Object.keys(by).length===1?'place':'places')}${notes?` · ${nf(notes)} ${T(notes===1?'Notiz':'Notizen',notes===1?'note':'notes')}`:''}</small></p>
     <ul class="ck-plist">${top.map(([l,s])=>`<li><b>${name(l)}</b><span>${nf(s)} SCU</span></li>`).join('')}</ul>`;}
 
+// Ship of the fleet that an internal ship name of the game log ("ANVL_Hornet_F7C_Mk2") means: the maker code
+// is dropped, the rest must all occur in the model name ("Anvil F7C Hornet Mk II"); of several models that
+// fit, the one with the fewest further words wins. No or no clear match gives null (the name stays text).
+const shipWords=s=>{const w=String(s||'').replace(/([a-z])([A-Z])/g,'$1 $2').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean), out=[], ROM={i:'1',ii:'2',iii:'3',iv:'4',v:'5'};
+  for(let i=0;i<w.length;i++){if(w[i]==='mk'&&w[i+1]!=null&&(ROM[w[i+1]]||/^\d+$/.test(w[i+1]))){out.push('mk'+(ROM[w[i+1]]||w[i+1])); i++;} else out.push(w[i]);}
+  return out;};
+function fleetShip(raw){const fleet=window.SCFleet?SCFleet.read().ships:[], want=shipWords(String(raw||'').split('_').slice(1).join(' '));
+  if(!want.length||!fleet.length) return null; let best=null, extra=1e9, tie=false;
+  for(const f of fleet){const have=new Set(shipWords(f.model)); if(!want.every(x=>have.has(x))) continue;
+    const e=have.size-want.length; if(e<extra){best=f; extra=e; tie=false;} else if(e===extra&&f.uex!==best.uex) tie=true;}
+  return tie?null:best;}
+
 // Last session the sessions tab of the trade planner has read (its cache holds archived logs, not the running one).
+// The place is a jump point if the pilot area has matched it to a ledger place (sc_cockpit_sitzung, for this
+// very session); the ship is one if it is a ship of the fleet.
 function sitzung(){const c=read('scha_sessions_cache_v2'), all=c&&typeof c==='object'?Object.values(c).filter(s=>s&&s.start):[];
   if(!all.length) return `<p class="ck-pempty">${T('Noch keine Sitzung gelesen. Unter „Pilot“ liest der Reiter „Sitzungen“ deine Spiel-Logs, nur auf deinem Rechner.','No session read yet. Under “Pilot” the “Sessions” tab reads your game logs, on your computer only.')}</p>`;
   const s=all.sort((a,b)=>String(b.start).localeCompare(String(a.start)))[0], j=Array.isArray(s.joins)&&s.joins.length?s.joins[s.joins.length-1]:null;
   const end={crash:['⚠ Absturz','⚠ crash'],ok:['normal beendet','ended normally'],open:['offen','open']}[s.ended]||['',''];
+  const mm=read('sc_cockpit_sitzung'), m=mm&&mm.start===s.start?mm:null, fs=s.ship?fleetShip(s.ship.raw):null;
   return `<ul class="ck-plist"><li><b>${esc(when(s.start)||'–')}</b><span>${esc(T(...end))}</span></li>
-    ${s.loc?`<li><b>📍 ${esc(pretty(s.loc.raw))}</b><span>${T('letzter Ort','last place')}</span></li>`:''}
-    ${s.ship?`<li><b>🚀 ${esc(pretty(s.ship.raw))}</b><span>${T('letztes Schiff','last ship')}</span></li>`:''}
+    ${s.loc?`<li><b>📍 ${m&&m.loc?C.jump('loc',m.loc,m.locName||pretty(s.loc.raw)):esc(pretty(s.loc.raw))}</b><span>${T('letzter Ort','last place')}</span></li>`:''}
+    ${s.ship?`<li><b>🚀 ${fs?C.jump('ship',fs.id,fs.name||fs.model):esc(pretty(s.ship.raw))}</b><span>${T('letztes Schiff','last ship')}</span></li>`:''}
     ${j&&j.shard?`<li><b>${esc(j.shard)}</b><span>Shard</span></li>`:''}</ul>
     <p class="ck-pmore">${T('Stand der zuletzt gelesenen, abgeschlossenen Sitzung.','State of the last finished session that was read.')}</p>`;}
 
@@ -404,7 +419,12 @@ function show(t){tab=t==='sessions'?'sessions':'rep';
   if(tab==='rep') X.RF.render(); else X.SZ.render(); summary();}
 // Short reputation state for the status board of the overview (aligned organisations with rank and estimate).
 // Written a moment after every interaction, because reading the logs changes the estimate later.
-function summary(){clearTimeout(sumTimer); sumTimer=setTimeout(()=>{try{const d=X.RF.handyData(); if(d&&d.o) localStorage.setItem('sc_cockpit_ruf',JSON.stringify(d));}catch(e){}},800);}
+function summary(){clearTimeout(sumTimer); sumTimer=setTimeout(()=>{try{const d=X.RF.handyData(); if(d&&d.o) localStorage.setItem('sc_cockpit_ruf',JSON.stringify(d));}catch(e){} lastPlace();},800);}
+// Ledger place of the last read session, for the overview's jump point. The sessions tab knows how an
+// internal place name maps to a place (its _placeOf); the overview has no place list of its own.
+function lastPlace(){try{const c=JSON.parse(localStorage.getItem('scha_sessions_cache_v2')||'null'), all=c&&typeof c==='object'?Object.values(c).filter(s=>s&&s.start):[];
+    if(!all.length) return; const s=all.sort((a,b)=>String(b.start).localeCompare(String(a.start)))[0], p=s.loc&&X.SZ._placeOf?X.SZ._placeOf(s.loc.raw):null;
+    localStorage.setItem('sc_cockpit_sitzung',JSON.stringify({start:s.start,loc:p?'p:'+p.id:null,locName:p?p.n:null}));}catch(e){}}
 function start(el){
   const st=document.createElement('style'); st.textContent=/*CSS*/''; document.head.appendChild(st);
   node=document.createElement('div'); node.className='ck-pilot'; node.innerHTML=HEAD+/*HTML*/'';
@@ -414,6 +434,9 @@ function start(el){
   X=boot();
   node.querySelector('.ck-subtabs').addEventListener('click',e=>{const b=e.target.closest('[data-t]'); if(b) show(b.dataset.t);});
   node.addEventListener('click',summary); node.addEventListener('change',summary);
+  // Reading logs ends some time after the click: follow the sessions view as it is drawn.
+  const sv=node.querySelector('#view-sessions'); if(sv) new MutationObserver(summary).observe(sv,{childList:true,subtree:true});
+  summary();
 }
 Cockpit.register('pilot',{render(el){if(!node) start(el); else if(node.parentNode!==el) el.replaceChildren(node);
   const it=Cockpit.intent; if(it&&it.tab){tab=it.tab; Cockpit.intent=null;}
