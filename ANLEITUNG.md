@@ -21,7 +21,7 @@ Alle Daten liegen in deinem Browser. Es gibt kein Konto und keinen Server.
 
 1. **Zu erledigen** gruppiert die offenen Merker nach Ort und nennt je Ort die Kaufsumme. So siehst du, was du an einer Station alles erledigen kannst.
 2. Setz den Haken direkt in der Übersicht, wenn etwas erledigt ist.
-3. Namen sind Sprungpunkte (unterstrichen): Ein **Ortsname** öffnet den Ort im Fracht-Logbuch, mit Fracht, Merkern und Notiz; ein **Schiffsname** öffnet das Schiff in der Flotte; der Name eines **Auftraggebers** zeigt ihn im Ruf.
+3. Namen sind Sprungpunkte (unterstrichen): Ein **Ortsname** öffnet den Ort im Fracht-Logbuch, mit Fracht, Merkern und Notiz; ein **Schiffsname** öffnet das Schiff in der Flotte (auch Ort und Schiff der letzten Sitzung, wenn sie sich zuordnen lassen); der Name eines **Auftraggebers** zeigt ihn im Ruf.
 4. **Flotte** zeigt je Schiff getauschte Teile, Fracht an Bord und offene Merker. **Fracht** zeigt die Summe und die Orte mit der meisten Fracht.
 5. **Letzte Sitzung** zeigt die zuletzt gelesene abgeschlossene Sitzung. Dazu musst du im Handels-Planer unter „Sitzungen“ einmal deinen Log-Ordner gelesen haben.
 

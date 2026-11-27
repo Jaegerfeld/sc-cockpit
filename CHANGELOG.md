@@ -2,6 +2,14 @@
 
 Alle nennenswerten Änderungen an diesem Projekt. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.0.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.13.0] – 2026-11-27
+
+### Hinzugefügt
+- **Übersicht: Ort und Schiff der letzten Sitzung sind Sprungpunkte.** Der letzte Ort öffnet das Fracht-Logbuch an diesem Ort, das letzte Schiff die Flotte mit diesem Schiff.
+  - Der Ort wird zum Sprungpunkt, sobald der Bereich „Pilot“ die Sitzung gelesen hat; dort wird der Name aus dem Spiel-Log einem Logbuch-Ort zugeordnet (dieselbe Zuordnung wie im Reiter „Sitzungen“).
+  - Das Schiff wird zum Sprungpunkt, wenn sein Name aus dem Spiel-Log zu genau einem Modell deiner Flotte passt. Hast du mehrere Schiffe dieses Modells, öffnet sich das erste.
+  - Lässt sich ein Name nicht eindeutig zuordnen, bleibt er wie bisher schlichter Text.
+
 ## [0.12.0] – 2026-11-27
 
 ### Hinzugefügt
