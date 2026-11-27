@@ -21,7 +21,7 @@ All data stays in your browser. There is no account and no server.
 
 1. **To do** groups the open reminders by place and gives the purchase total per place. That shows what you can get done at one station.
 2. Tick a reminder right in the overview when it is done.
-3. **In the ledger →** opens the place in the cargo ledger, with cargo, reminders and note.
+3. Names are jump points (underlined): a **place name** opens the place in the cargo ledger, with cargo, reminders and note; a **ship name** opens the ship in the fleet; the name of a **mission giver** shows it in the reputation tab.
 4. **Fleet** shows swapped parts, cargo aboard and open reminders per ship. **Cargo** shows the total and the places holding the most.
 5. **Last session** shows the last finished session that was read. For that you must have read your log folder once under "Sessions" in the trade planner.
 

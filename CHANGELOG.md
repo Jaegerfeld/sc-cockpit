@@ -2,6 +2,18 @@
 
 Alle nennenswerten Änderungen an diesem Projekt. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.0.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.11.0] – 2026-11-27
+
+### Hinzugefügt
+- **Namen sind Sprungpunkte.** Ein Name führt jetzt zum gemeinten Ding: Ein Schiffsname öffnet die Flotte mit genau diesem Schiff, ein Ortsname das Fracht-Logbuch an diesem Ort, der Name eines Auftraggebers seinen Eintrag im Ruf. Das gilt in der Übersicht (Zu erledigen, Flotte, Fracht, Ruf) und in der Merker-Leiste. Sprungpunkte sind unterstrichen und per Tastatur erreichbar.
+- **Flotte: Einkaufsliste nach Preis oder nach wenigen Orten** und **zuweisbarer Nasenturm der Hornet Mk II** (aus dem Schiffskauf-Planer 1.15.0).
+
+### Geändert
+- In „Zu erledigen“ ersetzt der Ortsname den Knopf „Im Logbuch →“; er führt an dieselbe Stelle.
+
+### Noch nicht
+- Ort und Schiff der „Letzten Sitzung“ sind noch keine Sprungpunkte: Die Namen aus dem Spiel-Log sind den Orten des Logbuchs und den Schiffen der Flotte noch nicht zugeordnet.
+
 ## [0.10.1] – 2026-11-26
 
 ### Geändert

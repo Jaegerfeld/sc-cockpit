@@ -6306,5 +6306,8 @@ Cockpit.register('pilot',{render(el){if(!node) start(el); else if(node.parentNod
   // A reputation state sent with "To the phone": the tab shows it as the state from the PC.
   if(it&&it.handy&&it.handy.kind==='ruf'){tab='rep'; Cockpit.intent=null; const bad=()=>Cockpit.toast(Cockpit.T('Der Link ist unvollständig oder beschädigt – bitte am PC neu erzeugen.','The link is incomplete or damaged – please create it again on the PC.'));
     if(typeof HY==='undefined') bad(); else HY._dec(it.handy.code).then(d=>{try{X.RF.fromHandy(d); summary();}catch(e){bad();}},bad);}
-  show(tab);}});
+  show(tab);
+  // A jump from an organisation's name: bring its card into view and mark it for a moment.
+  if(it&&it.org){Cockpit.intent=null; requestAnimationFrame(()=>{const c=[...node.querySelectorAll('#view-rep [data-org]')].find(x=>x.dataset.org===it.org);
+    if(!c) return; const g=c.closest('details'); if(g) g.open=true; c.scrollIntoView({block:'center'}); c.classList.add('ck-hit'); setTimeout(()=>c.classList.remove('ck-hit'),2200);});}}});
 })();

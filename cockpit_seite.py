@@ -211,6 +211,12 @@ body.ck-norail #ck-railbody{display:none}
 .ck-plist li:has(small) span{grid-row:1/3;align-self:center}
 .ck-plink{margin-top:auto;padding-top:6px;color:var(--accent2);font-family:var(--disp);font-weight:600;text-decoration:none;min-height:32px;display:inline-flex;align-items:center;gap:5px;align-self:flex-start}
 .ck-plink:hover{text-decoration:underline;text-underline-offset:3px}
+/* A name that jumps to the thing itself: underlined at rest too, so it is not marked by colour alone. */
+.ck-jump{color:var(--accent2);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;text-decoration-color:color-mix(in srgb,var(--accent2) 55%,transparent);border-radius:3px}
+.ck-jump:hover{text-decoration-thickness:2px;text-decoration-color:currentColor}
+.ck-hit{outline:2px solid var(--accent2);outline-offset:3px;border-radius:8px}
+.ck-jump:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
+@media (pointer:coarse){.ck-jump{display:inline-block;padding:6px 0}}
 .ck-ptodo{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px} .ck-ptodo>h2,.ck-ptodo>.ck-pempty{grid-column:1/-1}
 .ck-grph{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;margin-bottom:6px}
 .ck-grph b{font-size:15.5px} .ck-grph span{color:var(--muted);font-size:13.5px}
@@ -310,6 +316,15 @@ async function show(key,focus){cur=key; const a=area(key), main=$('ck-main');
 function draw(){const main=$('ck-main'); if(!REG[cur]) return;
   try{REG[cur].render(main);}catch(e){main.innerHTML=`<p class="ck-state">${T('Dieser Bereich hat einen Fehler gemeldet:','This area reported an error:')} ${esc(e.message)}</p>`;}}
 function go(key){if(keyFromHash()===key&&cur===key) return; location.hash='#/'+key;}
+// Jump points: a name as a link to the thing itself. kind 'ship' (fleet id) opens the ship in the fleet,
+// 'loc' (ledger place 'p:…' or 's:…') and 'shop' (shop text) the place in the cargo ledger, 'org' the
+// organisation in the reputation tab. The target area reads Cockpit.intent and clears it.
+const JUMP={ship:['flotte',v=>({ship:v})],loc:['fracht',v=>({loc:v})],shop:['fracht',v=>({shop:v})],org:['pilot',v=>({tab:'rep',org:v})]};
+function jump(kind,v,text){if(!JUMP[kind]||v==null||v==='') return esc(text);
+  return `<a class="ck-jump" href="#/${JUMP[kind][0]}" data-jump="${kind}" data-v="${esc(v)}">${esc(text)}</a>`;}
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[data-jump]'); if(!a||!JUMP[a.dataset.jump]) return;
+  e.preventDefault(); const [key,mk]=JUMP[a.dataset.jump]; Cockpit.intent=mk(a.dataset.v);
+  if(cur===key&&keyFromHash()===key){draw(); window.scrollTo({top:0});} else go(key);});
 window.addEventListener('hashchange',()=>{if(takeHandy()||/^#\//.test(location.hash)||!location.hash) show(keyFromHash(),true);});
 $('ck-nav').addEventListener('click',e=>{if(e.target.closest('.ck-tomerker')){e.preventDefault(); $('ck-rail').scrollIntoView({behavior:'smooth'}); $('ck-mtext').focus({preventScroll:true});}});
 
@@ -335,9 +350,9 @@ function toast(text,undo){const t=$('ck-toast'); clearTimeout(toastTimer);
   toastTimer=setTimeout(()=>{t.hidden=true;},undo?7000:2600);}
 // Where a reminder belongs: ship name, place name, count and price, as far as it carries them.
 function meta(m){const out=[];
-  if(m.ship!=null&&window.SCFleet){const f=SCFleet.read().ships.find(s=>s.id===m.ship); if(f) out.push('🚀 '+esc(f.name||f.model));}
-  if(m.loc) out.push('📍 '+esc(String(m.loc).replace(/^p:/,'').split('|').pop()));
-  else if(m.shop) out.push('📍 '+esc(m.shop));
+  if(m.ship!=null&&window.SCFleet){const f=SCFleet.read().ships.find(s=>s.id===m.ship); if(f) out.push('🚀 '+jump('ship',f.id,f.name||f.model));}
+  if(m.loc) out.push('📍 '+jump('loc',m.loc,String(m.loc).replace(/^p:/,'').split('|').pop()));
+  else if(m.shop) out.push('📍 '+jump('shop',m.shop,m.shop));
   if(m.price) out.push(`${nf(m.price*(m.n||1))} aUEC`);
   if(m.art==='auto') out.push(T('automatisch','automatic'));
   return out.join(' · ');}
@@ -499,6 +514,6 @@ new MutationObserver(()=>{for(const k in TM) toolFollow(k);}).observe(root,{attr
 takeHandy(); redraw(); show(keyFromHash(),false);
 // intent: a jump one area hands to another ({loc, shop} for the cargo ledger); the target clears it.
 // tool/TOOLS: whole tools as sub-tabs of an area (see above).
-return {VERSION,T,esc,nf,lang,register,go,placeholder,fact,toast,tool,TOOLS,intent:null};
+return {VERSION,T,esc,nf,lang,register,go,jump,placeholder,fact,toast,tool,TOOLS,intent:null};
 })();
 """
