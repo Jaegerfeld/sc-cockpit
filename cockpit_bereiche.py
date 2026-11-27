@@ -123,6 +123,15 @@ function ruf(){const d=read('sc_cockpit_ruf'), rows=d&&Array.isArray(d.o)?d.o:[]
   return `<ul class="ck-plist">${list.map(r=>`<li><b>${r.fav?'★ ':''}${C.jump('org',r.org,r.org)}</b><small>${esc(r.rank||'')}${r.next?` → ${esc(r.next)}`:''}</small><span>${r.pct==null?T('höchster Rang','top rank'):'≈ '+r.pct+' %'}</span></li>`).join('')}</ul>
     <p class="ck-pmore">${T('Schätzung, Stand','Estimate, as of')} ${esc(when(d.t))}.</p>`;}
 
+// Important items of the ledger's items view: how many, and the five with the most pieces.
+function dinge(){const led=read('scha_ledger_v1'), it=(led&&Array.isArray(led.items)?led.items:[]).filter(x=>x&&x.n&&x.c>0);
+  if(!it.length) return `<p class="ck-pempty">${T('Noch kein Gegenstand eingetragen. Unter „Fracht → Gegenstände“ hältst du fest, wo Medaillen, Scrips und Ressourcen liegen.','No item entered yet. Under “Cargo → Items” you note where medals, scrip and resources are.')}</p>`;
+  const by={}; for(const x of it){const k=String(x.n).toLowerCase(), g=by[k]||(by[k]={n:x.n,c:0,l:new Set()}); g.c+=+x.c||0; g.l.add(x.l);}
+  const all=Object.values(by), places=new Set(it.map(x=>x.l)).size, top=all.sort((a,b)=>b.c-a.c||a.n.localeCompare(b.n)).slice(0,5);
+  return `<p class="ck-big">${nf(all.length)} <small>${T(all.length===1?'Gegenstand':'Gegenstände',all.length===1?'item':'items')} ${T('an','at')} ${nf(places)} ${T(places===1?'Ort':'Orten',places===1?'place':'places')}</small></p>
+    <ul class="ck-plist">${top.map(g=>`<li><b>${C.jump('item',g.n,g.n)}</b><span>${nf(g.c)} ${T('Stück',g.c===1?'piece':'pieces')} · ${nf(g.l.size)} ${T(g.l.size===1?'Ort':'Orte',g.l.size===1?'place':'places')}</span></li>`).join('')}</ul>
+    ${all.length>5?`<p class="ck-pmore">${T(`und ${all.length-5} weitere`,`and ${all.length-5} more`)}</p>`:''}`;}
+
 const panel=(cls,title,body,key,linkTxt)=>`<section class="ck-panel ${cls}"><h2>${esc(title)}</h2>${body}${key?`<a class="ck-plink" href="#/${key}">${esc(linkTxt)} <span aria-hidden="true">→</span></a>`:''}</section>`;
 function render(el){const first=!SCData.items().length&&!(window.SCFleet&&SCFleet.read().ships.length)&&!read('scha_ledger_v1');
   el.innerHTML=`<h1>${T('Übersicht','Overview')}</h1>
@@ -132,6 +141,7 @@ function render(el){const first=!SCData.items().length&&!(window.SCFleet&&SCFlee
       ${panel('ck-ptodo',T('Zu erledigen','To do')+(SCData.open().length?` (${SCData.open().length})`:''),todo())}
       ${panel('',T('Flotte','Fleet'),flotte(),'flotte',T('Zur Flotte','To the fleet'))}
       ${panel('',T('Fracht','Cargo'),fracht(),'fracht',T('Zum Logbuch','To the ledger'))}
+      ${panel('',T('Gegenstände','Items'),dinge(),'fracht/items',T('Zu den Gegenständen','To the items'))}
       ${panel('ck-psess',T('Letzte Sitzung','Last session'),sitzung(),'pilot',T('Zu den Sitzungen','To the sessions'))}
       ${panel('',T('Ruf','Reputation'),ruf(),'pilot',T('Zum Ruf','To the reputation'))}
       ${panel('',T('Werkstatt','Workshop'),`<p class="ck-pempty">${T('Baupläne planen und den Tauschhandel bei Wikelo verfolgen.','Plan blueprints and track the trade with Wikelo.')}</p>`,'werkstatt',T('Zur Werkstatt','To the workshop'))}
@@ -284,18 +294,22 @@ FRACHT_JS = r"""
 // The ledger binds its handlers to its own elements once, so its node is built once and re-attached.
 let node=null, LBX=null;
 const HEAD=`<h1><span class="de">Fracht</span><span class="en">Cargo</span></h1>
-  <p class="ck-lede"><span class="de">Dein Fracht-Logbuch: was wo liegt, Notizen je Ort und Schiff, und was dort zu erledigen ist. Kaufmerker aus der Flotte erscheinen am Ort ihres Händlers. Daneben: Routen und Waren, und der Auswerter für Konsolen-Screenshots.</span><span class="en">Your cargo ledger: what is where, notes per place and ship, and what there is to do. Purchase reminders from the fleet appear at the place of their shop.</span></p>`;
+  <p class="ck-lede"><span class="de">Dein Fracht-Logbuch: was wo liegt, Notizen je Ort und Schiff, und was dort zu erledigen ist. Unter „Gegenstände“ hältst du fest, wo Medaillen, Scrips und Ressourcen liegen. Kaufmerker aus der Flotte erscheinen am Ort ihres Händlers. Daneben: Routen und Waren, und der Auswerter für Konsolen-Screenshots.</span><span class="en">Your cargo ledger: what is where, notes per place and ship, and what there is to do. Under “Items” you note where medals, scrip and resources are. Purchase reminders from the fleet appear at the place of their shop.</span></p>`;
 // Sub-tabs: the ledger itself; routes and commodities and the screenshot reader as whole tools (loaded on first use).
 const TABS=`<div class="ck-subtabs" role="tablist" aria-label="Fracht / Cargo">
   <button type="button" role="tab" data-t="lb"><span class="de">Logbuch</span><span class="en">Ledger</span></button>
+  <button type="button" role="tab" data-t="items"><span class="de">Gegenstände</span><span class="en">Items</span></button>
   <button type="button" role="tab" data-t="handel"><span class="de">Routen &amp; Waren</span><span class="en">Routes &amp; commodities</span></button>
   <button type="button" role="tab" data-t="auswerter"><span class="de">Auswerter</span><span class="en">Screenshot reader</span></button></div>`;
-const PANES={lb:null,handel:{de:'Routen & Waren',en:'Routes & commodities',url:'__handel__'},
+const PANES={lb:null,items:null,handel:{de:'Routen & Waren',en:'Routes & commodities',url:'__handel__'},
   auswerter:{de:'Auswerter',en:'Screenshot reader',url:'__auswerter__'}};
 let pane='lb';
-function show(p){pane=p in PANES?p:'lb';
-  node.querySelectorAll('[data-pane]').forEach(h=>{h.hidden=h.dataset.pane!==pane;});
-  node.querySelectorAll('.ck-subtabs [data-t]').forEach(x=>x.setAttribute('aria-selected',String(x.dataset.t===pane)));
+// "Gegenstände" is the ledger's second view (important items); it lives in the ledger's own pane.
+const marks=()=>node.querySelectorAll('.ck-subtabs [data-t]').forEach(x=>x.setAttribute('aria-selected',String(x.dataset.t===pane)));
+function show(p){pane=p in PANES?p:'lb'; const host=pane==='items'?'lb':pane;
+  node.querySelectorAll('[data-pane]').forEach(h=>{h.hidden=h.dataset.pane!==host;});
+  marks();
+  if(host==='lb'&&LBX&&LBX.mode) LBX.mode(pane==='items'?'items':'cargo');
   if(PANES[pane]) Cockpit.tool(node.querySelector(`[data-pane="${pane}"]`),pane,PANES[pane]);}
 // A ledger sent with "To the phone": decode it and hand it to the ledger (it asks before replacing a state).
 function recv(code){const bad=()=>Cockpit.toast(Cockpit.T('Der Link ist unvollständig oder beschädigt – bitte am PC neu erzeugen.','The link is incomplete or damaged – please create it again on the PC.'));
@@ -311,6 +325,7 @@ return LB;
 // The ledger's columns follow its own width here (inside the cockpit its column is narrower than the window).
 const CSS_HOST=`
   .ck-lb #view-ledger{display:block}
+  .ck-lb #view-ledger .lb-mode{display:none}
   .ck-lb.midw #view-ledger .lb-grid{grid-template-columns:210px minmax(0,1fr) 230px}
   .ck-lb.narrow #view-ledger .lb-grid{grid-template-columns:minmax(0,1fr)}
   .ck-lb.narrow #view-ledger .lb-mid{order:-1}`;
@@ -321,16 +336,21 @@ function start(el){
   node.querySelector('#view-ledger').classList.remove('hide');
   node.querySelector('.ck-subtabs').addEventListener('click',e=>{const x=e.target.closest('[data-t]'); if(x) show(x.dataset.t);});
   LBX=boot();
+  // The ledger changed its view itself (a jump between cargo and items): the sub-tabs follow.
+  node.addEventListener('lb-mode',e=>{const want=e.detail==='items'?'items':'lb'; if((pane==='lb'||pane==='items')&&pane!==want){pane=want; marks();}});
   new ResizeObserver(()=>{const w=node.clientWidth; if(!w) return; node.classList.toggle('narrow',w<720); node.classList.toggle('midw',w<980);}).observe(node);
 }
 // Every draw (language, reminders, fleet) takes over fleet changes and redraws the ledger.
 Cockpit.register('fracht',{render(el){if(!node) start(el); else if(node.parentNode!==el) el.replaceChildren(node);
   if(!LBX){show(pane); return;}
   // A jump from the overview ("In the ledger"): select that place, found by its id or by the shop text.
+  // A jump from an item's name opens the items view filtered to that name.
+  let find=null;
   const it=Cockpit.intent; if(it){Cockpit.intent=null; if(it.pane) pane=it.pane;
     if(it.handy&&it.handy.kind==='lb'){pane='lb'; recv(it.handy.code);}
-    const loc=it.loc||(LBX.shopPlace?LBX.shopPlace(it.shop):null); if(loc){pane='lb'; LBX.openLoc(loc);}}
-  show(pane); if(LBX.sync) LBX.sync(); LBX.render();}});
+    const loc=it.loc||(LBX.shopPlace?LBX.shopPlace(it.shop):null); if(loc){pane='lb'; LBX.openLoc(loc);}
+    if(it.item!=null){pane='items'; find=it.item;}}
+  show(pane); if(find!=null&&LBX.findItem) LBX.findItem(find); if(LBX.sync) LBX.sync(); LBX.render();}});
 })();
 """
 

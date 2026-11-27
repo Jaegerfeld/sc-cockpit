@@ -318,8 +318,8 @@ function draw(){const main=$('ck-main'); if(!REG[cur]) return;
 function go(key){if(keyFromHash()===key&&cur===key) return; location.hash='#/'+key;}
 // Jump points: a name as a link to the thing itself. kind 'ship' (fleet id) opens the ship in the fleet,
 // 'loc' (ledger place 'p:…' or 's:…') and 'shop' (shop text) the place in the cargo ledger, 'org' the
-// organisation in the reputation tab. The target area reads Cockpit.intent and clears it.
-const JUMP={ship:['flotte',v=>({ship:v})],loc:['fracht',v=>({loc:v})],shop:['fracht',v=>({shop:v})],org:['pilot',v=>({tab:'rep',org:v})]};
+// organisation in the reputation tab, 'item' (name) the item in the items book of the cargo area. The target area reads Cockpit.intent and clears it.
+const JUMP={ship:['flotte',v=>({ship:v})],loc:['fracht',v=>({loc:v})],shop:['fracht',v=>({shop:v})],org:['pilot',v=>({tab:'rep',org:v})],item:['fracht',v=>({item:v})]};
 function jump(kind,v,text){if(!JUMP[kind]||v==null||v==='') return esc(text);
   return `<a class="ck-jump" href="#/${JUMP[kind][0]}" data-jump="${kind}" data-v="${esc(v)}">${esc(text)}</a>`;}
 document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[data-jump]'); if(!a||!JUMP[a.dataset.jump]) return;

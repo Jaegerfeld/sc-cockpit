@@ -7,7 +7,7 @@ Das Cockpit führt die Star-Citizen-Werkzeuge in einer App zusammen. Es ist im A
 - **Seitenleiste links:** wechselt zwischen **Übersicht**, **Flotte**, **Fracht**, **Werkstatt**, **Guides** und **Pilot**. Auf schmalen Bildschirmen steht sie als Zeile oben.
 - **Übersicht:** dein Lagebild. Oben steht **Zu erledigen** mit allen offenen Merkern nach Ort, darunter Flotte, Fracht und die letzte Sitzung.
 - **Flotte:** deine Schiffe und der Komponenten-Planer. Hier tauschst du Teile und übernimmst die Einkaufsliste als Merker.
-- **Fracht:** das Fracht-Logbuch mit Notizen und den Merkern am Ort.
+- **Fracht:** das Fracht-Logbuch mit Notizen und den Merkern am Ort, daneben **Gegenstände**: wo Medaillen, Scrips und Ressourcen liegen.
 - **Pilot:** dein Ruf je Organisation und deine Spielsitzungen.
 - **Werkstatt:** der Bauplan-Planer und der Wikelo-Planer.
 - **Guides:** alle Feldhandbücher und Flyer; ein Guide öffnet sich direkt im Cockpit.
