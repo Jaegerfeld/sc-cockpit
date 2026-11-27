@@ -13,10 +13,9 @@ function todo(){const open=SCData.open(), fleet=window.SCFleet?SCFleet.read().sh
   const groups=new Map(); for(const m of open){const k=placeTxt(m); if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(m);}
   const keys=[...groups.keys()].sort((a,b)=>(a==='')-(b==='')||a.localeCompare(b));
   return keys.map(k=>{const list=groups.get(k), sum=list.reduce((a,m)=>a+(m.price?m.price*(m.n||1):0),0), first=list.find(m=>m.loc||m.shop);
-    return `<div class="ck-grp"><div class="ck-grph"><b>${k?'📍 '+esc(k):T('Ohne Ort','No place')}</b>${sum?`<span>${nf(sum)} aUEC</span>`:''}
-      ${first?`<button type="button" class="btn ck-open" data-loc="${esc(first.loc||'')}" data-shop="${esc(first.shop||'')}">${T('Im Logbuch','In the ledger')} <span aria-hidden="true">→</span><span class="ck-sr"> ${esc(k)}</span></button>`:''}</div>
+    return `<div class="ck-grp"><div class="ck-grph"><b>${k?'📍 '+(first?(first.loc?C.jump('loc',first.loc,k):C.jump('shop',first.shop,k)):esc(k)):T('Ohne Ort','No place')}</b>${sum?`<span>${nf(sum)} aUEC</span>`:''}</div>
       <ul class="ck-ml">${list.map(m=>{const f=m.ship!=null?fleet.find(s=>s.id===m.ship):null;
-        const meta=[f?'🚀 '+esc(f.name||f.model):'',m.shop?esc(String(m.shop).split(' - ')[0]):'',m.price?`${nf(m.price*(m.n||1))} aUEC`:''].filter(Boolean).join(' · ');
+        const meta=[f?'🚀 '+C.jump('ship',f.id,f.name||f.model):'',m.shop?esc(String(m.shop).split(' - ')[0]):'',m.price?`${nf(m.price*(m.n||1))} aUEC`:''].filter(Boolean).join(' · ');
         return `<li><label><input type="checkbox" data-id="${esc(m.id)}"> <span>${m.n>1?esc(m.n)+' × ':''}${esc(m.text)}</span></label>${meta?`<small>${meta}</small>`:''}</li>`;}).join('')}</ul></div>`;}).join('');}
 
 // Fleet: every ship with what is known about it across the areas.
@@ -25,7 +24,7 @@ function flotte(){const fleet=window.SCFleet?SCFleet.read().ships:[], led=read('
   const rows=fleet.slice(0,6).map(f=>{const scu=(led&&Array.isArray(led.stock)?led.stock:[]).filter(p=>p&&p.l==='s:'+f.id).reduce((a,p)=>a+(+p.z||0)*(+p.n||0),0);
     const fit=kp&&kp.fit&&kp.fit[f.id]?Object.keys(kp.fit[f.id]).length:0, mk=open.filter(m=>m.ship===f.id).length;
     const bits=[fit?T(`${fit} ${fit===1?'Teil':'Teile'} getauscht`,`${fit} ${fit===1?'part':'parts'} swapped`):'',scu?`${nf(scu)} SCU ${T('an Bord','aboard')}`:'',mk?`☑ ${mk} ${T('Merker',mk===1?'reminder':'reminders')}`:''].filter(Boolean);
-    return `<li><b>${esc(f.name||f.model)}</b>${f.name?`<small>${esc(f.model)}</small>`:''}<span>${bits.length?bits.join(' · '):T('Standard, leer','stock, empty')}</span></li>`;}).join('');
+    return `<li><b>${C.jump('ship',f.id,f.name||f.model)}</b>${f.name?`<small>${esc(f.model)}</small>`:''}<span>${bits.length?bits.join(' · '):T('Standard, leer','stock, empty')}</span></li>`;}).join('');
   return `<ul class="ck-plist">${rows}</ul>${fleet.length>6?`<p class="ck-pmore">${T(`und ${fleet.length-6} weitere`,`and ${fleet.length-6} more`)}</p>`:''}`;}
 
 // Cargo: totals and the places holding the most.
@@ -34,7 +33,7 @@ function fracht(){const led=read('scha_ledger_v1'), stock=(led&&Array.isArray(le
   if(!stock.length) return `<p class="ck-pempty">${T('Keine Fracht im Logbuch.','No cargo in the ledger.')}${notes?` ${nf(notes)} ${T(notes===1?'Notiz':'Notizen',notes===1?'note':'notes')}.`:''}</p>`;
   const by={}; for(const p of stock) by[p.l]=(by[p.l]||0)+p.z*p.n;
   const total=Object.values(by).reduce((a,b)=>a+b,0), top=Object.entries(by).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  const name=l=>{if(l[0]==='s'){const s=(led.ships||[]).find(x=>'s:'+x.id===l); return '🚀 '+esc(s?s.n:'?');} return '📍 '+esc(l.slice(2).split('|').pop());};
+  const name=l=>{if(l[0]==='s'){const s=(led.ships||[]).find(x=>'s:'+x.id===l); return '🚀 '+C.jump('loc',l,s?s.n:'?');} return '📍 '+C.jump('loc',l,l.slice(2).split('|').pop());};
   return `<p class="ck-big">${nf(total)} SCU <small>${T('an','at')} ${nf(Object.keys(by).length)} ${T(Object.keys(by).length===1?'Ort':'Orten',Object.keys(by).length===1?'place':'places')}${notes?` · ${nf(notes)} ${T(notes===1?'Notiz':'Notizen',notes===1?'note':'notes')}`:''}</small></p>
     <ul class="ck-plist">${top.map(([l,s])=>`<li><b>${name(l)}</b><span>${nf(s)} SCU</span></li>`).join('')}</ul>`;}
 
@@ -54,7 +53,7 @@ function ruf(){const d=read('sc_cockpit_ruf'), rows=d&&Array.isArray(d.o)?d.o:[]
   if(!rows.length) return `<p class="ck-pempty">${T('Noch kein Ruf abgeglichen. Unter „Pilot“ gleichst du einmal Rang und Balken aus dem mobiGlas ab.','No reputation aligned yet. Under “Pilot” you align rank and bar from the mobiGlas once.')}</p>`;
   const list=rows.map(([org,rank,cur,next,nxp,lo,hi,fav])=>{const mid=(lo+hi)/2, pct=next&&nxp>cur?Math.max(0,Math.min(100,Math.round((mid-cur)/(nxp-cur)*100))):null; return {org,rank,next,pct,fav};})
     .sort((a,b)=>b.fav-a.fav||(b.pct??-1)-(a.pct??-1)).slice(0,5);
-  return `<ul class="ck-plist">${list.map(r=>`<li><b>${r.fav?'★ ':''}${esc(r.org)}</b><small>${esc(r.rank||'')}${r.next?` → ${esc(r.next)}`:''}</small><span>${r.pct==null?T('höchster Rang','top rank'):'≈ '+r.pct+' %'}</span></li>`).join('')}</ul>
+  return `<ul class="ck-plist">${list.map(r=>`<li><b>${r.fav?'★ ':''}${C.jump('org',r.org,r.org)}</b><small>${esc(r.rank||'')}${r.next?` → ${esc(r.next)}`:''}</small><span>${r.pct==null?T('höchster Rang','top rank'):'≈ '+r.pct+' %'}</span></li>`).join('')}</ul>
     <p class="ck-pmore">${T('Schätzung, Stand','Estimate, as of')} ${esc(when(d.t))}.</p>`;}
 
 const panel=(cls,title,body,key,linkTxt)=>`<section class="ck-panel ${cls}"><h2>${esc(title)}</h2>${body}${key?`<a class="ck-plink" href="#/${key}">${esc(linkTxt)} <span aria-hidden="true">→</span></a>`:''}</section>`;
@@ -74,9 +73,7 @@ function render(el){const first=!SCData.items().length&&!(window.SCFleet&&SCFlee
   // Tick a reminder; the board is drawn again by the change, so focus goes to the next open one.
   el.querySelector('.ck-board').addEventListener('change',e=>{const c=e.target.closest('input[data-id]'); if(!c) return;
     SCData.toggle(c.dataset.id,true); (document.querySelector('#ck-main .ck-ptodo input[data-id]')||document.querySelector('#ck-main h1'))?.focus({preventScroll:true});});
-  // Open the place of a group in the cargo ledger; the session panel's link opens the sessions tab of the pilot.
-  el.querySelector('.ck-board').addEventListener('click',e=>{if(e.target.closest('.ck-psess .ck-plink')){C.intent={tab:'sessions'}; return;}
-    const b=e.target.closest('.ck-open'); if(!b) return;
-    C.intent={loc:b.dataset.loc||null,shop:b.dataset.shop||null}; C.go('fracht');});}
+  // The session panel's link opens the sessions tab of the pilot. Names are jump points (Cockpit.jump).
+  el.querySelector('.ck-board').addEventListener('click',e=>{if(e.target.closest('.ck-psess .ck-plink')) C.intent={tab:'sessions'};});}
 Cockpit.register('uebersicht',{render});
 })();
