@@ -298,18 +298,39 @@ def wiki_locations(use_cache: bool) -> list[dict]:
     return out
 
 
+#: Where the bodies stand on the in-game starmap (top view, not rotated), read from screenshots on
+#: 27.11.2026 (patch 4.10.3): angle in degrees, 0 = right, counter-clockwise. Planets in order from the
+#: star; ``belt`` is a ring that is an asteroid belt; ``bodies`` are other places on the outer ring;
+#: ``exits`` are the gateways by target system. Planets do not move in the game; update by hand when a
+#: patch adds or moves bodies. Nyx I–III are on the starmap already but not reachable (Nyx I with 5.0,
+#: II and III in later patches); new systems (2027/2028) may move gateways.
+KARTE_LAGE: dict = {
+    "Stanton": {"planets": [("Hurston", 1), ("Crusader", 187), ("ArcCorp", 312), ("MicroTech", 61)],
+                "exits": {"Pyro": 279, "Terra": 356, "Nyx": 160}},
+    "Pyro": {"planets": [("Pyro I", 189), ("Monox", 300), ("Bloom", 153), ("Pyro V", 264), ("Terminus", 133)],
+             "exits": {"Stanton": 49, "Nyx": 225}},
+    "Nyx": {"planets": [("Nyx I", 329), ("Nyx II", 108), ("Delamar", 230), ("Nyx III", 220)], "belt": "Delamar",
+            "bodies": {"People's Service Station Alpha": 197, "People's Service Station Delta": 262,
+                       "People's Service Station Lambda": 25, "People's Service Station Theta": 326},
+            "exits": {"Pyro": 119, "Stanton": 240}},
+}
+#: Bodies the wiki lists as planets that the starmap shows as moons (no orbit of their own): moon -> planet.
+MOON_OF: dict = {"Pyro|Pyro IV": "Pyro V"}
+
+
 def karte_data(use_cache: bool) -> dict | None:
     """Data of the map area: ledger places with planet/moon/orbit, planet order and moons per planet.
 
     Planets are ordered by their wiki designation (Stanton I … IV); a moon belongs to the planet whose
     designation it extends (Stanton Ia → Stanton I). UEX and wiki names are matched without case.
-    Without the wiki the planets keep the order of their names.
+    Without the wiki the planets keep the order of their names. ``KARTE_LAGE`` then sets the order and
+    the angles as on the in-game starmap, and ``MOON_OF`` turns wiki planets into moons.
 
     Args:
         use_cache: Read the local caches instead of the network.
 
     Returns:
-        ``{"places", "order", "moons", "alias"}``, or None without ledger places.
+        ``{"places", "order", "moons", "alias", "lage"}``, or None without ledger places.
     """
     try:
         places = [{k: p[k] for k in ("id", "n", "sys", "pl", "mo", "orb") if p.get(k)} for p in logbuch_data(use_cache)["places"]]
@@ -351,7 +372,30 @@ def karte_data(use_cache: bool) -> dict | None:
     for s in systems:
         for n in uex[s]:
             alias.setdefault(f"{s}|{re.sub(r'[^a-z0-9]', '', n.lower())}", n)
-    return {"places": places, "order": order, "moons": moons, "alias": alias}
+    lage = _karte_lage(places, order, moons)
+    return {"places": places, "order": order, "moons": moons, "alias": alias, "lage": lage}
+
+
+def _karte_lage(places: list[dict], order: dict, moons: dict) -> dict:
+    """Apply ``MOON_OF`` and ``KARTE_LAGE`` to the map data in place; returns the angles per system."""
+    for key, parent in MOON_OF.items():
+        s, m = key.split("|", 1)
+        if m in order.get(s, []):
+            order[s].remove(m)
+        moons.pop(key, None)
+        moons[f"{s}|{parent}"] = sorted(set(moons.get(f"{s}|{parent}", [])) | {m})
+        for p in places:
+            if p["sys"] == s and p.get("pl") == m:
+                p["pl"] = parent
+                p.setdefault("mo", m)
+    lage: dict = {}
+    for s, d in KARTE_LAGE.items():
+        if s not in order:
+            continue
+        names = [n for n, _ in d["planets"]]
+        order[s] = names + [p for p in order[s] if p not in names]
+        lage[s] = {"a": {**dict(d["planets"]), **d.get("bodies", {})}, "x": d["exits"], "belt": d.get("belt")}
+    return lage
 
 
 @functools.cache
