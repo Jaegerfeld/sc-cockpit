@@ -44,6 +44,7 @@
 from __future__ import annotations
 
 import functools
+import hashlib
 import importlib
 import json
 import os
@@ -108,8 +109,24 @@ def handy_parts() -> tuple[str, str, str]:
         return "", "", ""
 
 
-def page() -> str:
+def stamps(scripts: dict[str, str]) -> dict[str, str]:
+    """Cache key per script: the first ten hex digits of the SHA-256 of its content.
+
+    Args:
+        scripts: File stem (``flotte``, ``tool_handel`` …) -> JavaScript source.
+
+    Returns:
+        File stem -> key, for the ``?v=`` of the script address.
+    """
+    return {k: hashlib.sha256(js.encode("utf-8")).hexdigest()[:10] for k, js in sorted(scripts.items())}
+
+
+def page(stamp: dict[str, str] | None = None) -> str:
     """Assemble the start page from the template, the shared kits and the cockpit modules.
+
+    Args:
+        stamp: Cache keys of the scripts under ``bereiche/`` (see :func:`stamps`); without them
+            the page falls back to the cockpit version as the key.
 
     Returns:
         The complete HTML of the start file.
@@ -118,7 +135,8 @@ def page() -> str:
     hy_html, hy_css, hy_js = handy_parts()
     js = (kz.JS + sd.JS + fl.FLOTTE_JS + cd.DATEN_JS + csi.SICHERUNG_JS + hy_js
           + cs.JS.replace("/*CK_VER*/'0'", json.dumps(VERSION))
-          .replace("/*CK_AREAS*/[]", json.dumps(areas, ensure_ascii=False)))
+          .replace("/*CK_AREAS*/[]", json.dumps(areas, ensure_ascii=False))
+          .replace("/*CK_STAMP*/{}", json.dumps(stamp or {})))
     # Screen-reader-only text and the bilingual spans of this page use the header kit's classes.
     css = sd.CSS + kz.CSS + cs.CSS + hy_css + "\n.ck-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}\n"
     dialog = (kz.dialog_html("cockpit", VERSION).replace("https://github.com/Jaegerfeld/blob/", REPO + "/blob/")
@@ -582,7 +600,7 @@ def build(make_zip: bool = False, use_cache: bool = False) -> list[Path]:
         if old.stem not in scripts:
             old.unlink()
     written = [OUT / START]
-    (OUT / START).write_text(page(), encoding="utf-8", newline="\n")
+    (OUT / START).write_text(page(stamps(scripts)), encoding="utf-8", newline="\n")
     for key, js in scripts.items():
         f = OUT / "bereiche" / f"{key}.js"
         f.write_text(js, encoding="utf-8", newline="\n")

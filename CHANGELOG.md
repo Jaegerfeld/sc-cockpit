@@ -2,6 +2,12 @@
 
 Alle nennenswerten Änderungen an diesem Projekt. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.0.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.13.1] – 2026-11-27
+
+### Behoben
+- **Neue Fassungen der Bereiche kamen im Browser verspätet an.** Flotte, Fracht, Pilot, Werkstatt und die eingebetteten Werkzeuge wurden mit der Cockpit-Version als Cache-Schlüssel geladen. Ändert sich nur ein eingebautes Werkzeug (zuletzt der Schiffskauf-Planer mit „Habe ich schon“), bleibt die Cockpit-Version gleich, und der Browser durfte die alte Datei weiterverwenden. Jede Datei trägt jetzt einen Schlüssel aus ihrem Inhalt: Geänderte Dateien werden neu geholt, unveränderte bleiben im Cache.
+- Weiter gilt: Die Startseite selbst hält der Browser bis zu zehn Minuten vor (Vorgabe von GitHub Pages), und ein offener Tab lädt einen Bereich nicht neu. Im Zweifel hilft Neuladen mit Strg+F5.
+
 ## [0.13.0] – 2026-11-27
 
 ### Hinzugefügt
