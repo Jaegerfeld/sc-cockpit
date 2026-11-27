@@ -39,5 +39,7 @@ function start(host){
   new MutationObserver(follow).observe(html,{attributes:true,attributeFilter:['data-theme']});
 }
 Cockpit.register('guides',{render(host){if(!node) start(host); else if(node.parentNode!==host) host.replaceChildren(node);
+  // A guide handed over by the overview ("Guide zum Ort") opens in the reader.
+  const it=C.intent; if(it&&it.guide){C.intent=null; open=it.guide;}
   follow(); reader();}});
 })();

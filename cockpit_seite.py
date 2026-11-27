@@ -211,6 +211,10 @@ body.ck-norail #ck-railbody{display:none}
 .ck-plist li:has(small) span{grid-row:1/3;align-self:center}
 .ck-plink{margin-top:auto;padding-top:6px;color:var(--accent2);font-family:var(--disp);font-weight:600;text-decoration:none;min-height:32px;display:inline-flex;align-items:center;gap:5px;align-self:flex-start}
 .ck-plink:hover{text-decoration:underline;text-underline-offset:3px}
+.ck-pval{color:var(--accent2);font-weight:700;white-space:nowrap}
+.ck-route{margin-top:10px;padding-top:8px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:2px 8px;align-items:baseline;font-size:14.5px}
+.ck-route small{flex-basis:100%;color:var(--muted);font-size:12.5px}
+.ck-route .ck-plink{margin-top:0;padding-top:0;flex-basis:100%}
 /* A name that jumps to the thing itself: underlined at rest too, so it is not marked by colour alone. */
 .ck-jump{color:var(--accent2);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;text-decoration-color:color-mix(in srgb,var(--accent2) 55%,transparent);border-radius:3px}
 .ck-jump:hover{text-decoration-thickness:2px;text-decoration-color:currentColor}

@@ -69,6 +69,10 @@ BEREICHE: dict[str, str] = {
 (function(){
 const C=Cockpit, T=C.T, esc=C.esc, nf=C.nf;
 const read=k=>{try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}};
+// Data from the build (cockpit_bauen.overview_data): prices, best route, blueprint costs, Wikelo trades, guides.
+const UE=/*UE_DATA*/null||{};
+const na=what=>`<p class="ck-pempty">${what}: ${T('beim Bau nicht verfügbar.','not available at build time.')}</p>`;
+const short=n=>n>=1e6?`${(n/1e6).toLocaleString(C.lang()==='en'?'en-US':'de-DE',{maximumFractionDigits:1})} ${T('Mio.','M')}`:nf(n);
 // Place of a reminder as text: the ledger place, else the place part of the shop text ("… - Port Tressler (Stanton)").
 const placeTxt=m=>m.loc?String(m.loc).replace(/^p:/,'').split('|').pop():m.shop?String(m.shop).split(' - ').pop().replace(/\s*\([^()]*\)$/,''):'';
 const pretty=raw=>String(raw||'').replace(/^RR_/,'').replace(/_/g,' ').replace(/([a-z])([A-Z])/g,'$1 $2').trim();
@@ -89,10 +93,10 @@ function todo(){const open=SCData.open(), fleet=window.SCFleet?SCFleet.read().sh
 function flotte(){const fleet=window.SCFleet?SCFleet.read().ships:[], led=read('scha_ledger_v1'), kp=read('scsk_kp'), open=SCData.open();
   if(!fleet.length) return `<p class="ck-pempty">${T('Noch kein Schiff. Unter „Flotte“ wählst du deine Schiffe.','No ship yet. Pick your ships under “Fleet”.')}</p>`;
   const rows=fleet.slice(0,6).map(f=>{const scu=(led&&Array.isArray(led.stock)?led.stock:[]).filter(p=>p&&p.l==='s:'+f.id).reduce((a,p)=>a+(+p.z||0)*(+p.n||0),0);
-    const fit=kp&&kp.fit&&kp.fit[f.id]?Object.keys(kp.fit[f.id]).length:0, mk=open.filter(m=>m.ship===f.id).length;
+    const ff=kp&&kp.fit&&kp.fit[f.id]||{}, hv=kp&&kp.have&&kp.have[f.id]||{}, fit=Object.keys(ff).length, buy=Object.keys(ff).filter(k=>hv[k]!==ff[k]).length, mk=open.filter(m=>m.ship===f.id).length;
     // Where the ship stands, as the cargo ledger knows it (scha_ledger_v1.at).
     const at=led&&led.at&&led.at[f.id]&&typeof led.at[f.id].l==='string'?led.at[f.id].l:null, pl=at?at.slice(2).split('|').pop():'';
-    const bits=[at?'📍 '+C.jump('loc',at,pl):'',fit?T(`${fit} ${fit===1?'Teil':'Teile'} getauscht`,`${fit} ${fit===1?'part':'parts'} swapped`):'',scu?`${nf(scu)} SCU ${T('an Bord','aboard')}`:'',mk?`☑ ${mk} ${T('Merker',mk===1?'reminder':'reminders')}`:''].filter(Boolean);
+    const bits=[at?'📍 '+C.jump('loc',at,pl):'',fit?(buy?T(`🛒 ${buy} ${buy===1?'Teil':'Teile'} zu kaufen`,`🛒 ${buy} ${buy===1?'part':'parts'} to buy`):T(`${fit} ${fit===1?'Teil':'Teile'} getauscht, alles vorhanden`,`${fit} ${fit===1?'part':'parts'} swapped, all owned`)):'',scu?`${nf(scu)} SCU ${T('an Bord','aboard')}`:'',mk?`☑ ${mk} ${T('Merker',mk===1?'reminder':'reminders')}`:''].filter(Boolean);
     return `<li><b>${C.jump('ship',f.id,f.name||f.model)}</b>${f.name?`<small>${esc(f.model)}</small>`:''}<span>${bits.length?bits.join(' · '):T('Standard, leer','stock, empty')}</span></li>`;}).join('');
   return `<ul class="ck-plist">${rows}</ul>${fleet.length>6?`<p class="ck-pmore">${T(`und ${fleet.length-6} weitere`,`and ${fleet.length-6} more`)}</p>`:''}`;}
 
@@ -105,7 +109,10 @@ function fracht(){const led=read('scha_ledger_v1'), stock=(led&&Array.isArray(le
   const home=typeof led.home==='string'?led.home:null;
   const total=Object.values(by).reduce((a,b)=>a+b,0), top=Object.entries(by).sort((a,b)=>(b[0]===home)-(a[0]===home)||b[1]-a[1]).slice(0,5);
   const name=l=>{if(l[0]==='s'){const s=(led.ships||[]).find(x=>'s:'+x.id===l); return '🚀 '+C.jump('loc',l,s?s.n:'?');} return (l===home?'🏠 ':'📍 ')+C.jump('loc',l,l.slice(2).split('|').pop());};
-  return `<p class="ck-big">${nf(total)} SCU <small>${T('an','at')} ${nf(Object.keys(by).length)} ${T(Object.keys(by).length===1?'Ort':'Orten',Object.keys(by).length===1?'place':'places')}${notes?` · ${nf(notes)} ${T(notes===1?'Notiz':'Notizen',notes===1?'note':'notes')}`:''}</small></p>
+  // Value with the same UEX sell price the ledger uses; posts without a price are left out and counted.
+  let val=0, miss=0; if(UE.prices) for(const p of stock){const pr=UE.prices[String(p.w)]; if(pr) val+=pr*p.z*p.n; else miss++;}
+  return `<p class="ck-big">${nf(total)} SCU${UE.prices&&val?` <span class="ck-pval">≈ ${short(Math.round(val))} aUEC</span>`:''} <small>${T('an','at')} ${nf(Object.keys(by).length)} ${T(Object.keys(by).length===1?'Ort':'Orten',Object.keys(by).length===1?'place':'places')}${notes?` · ${nf(notes)} ${T(notes===1?'Notiz':'Notizen',notes===1?'note':'notes')}`:''}</small></p>
+    ${UE.prices&&val&&miss?`<p class="ck-pmore">${T(`${miss} ${miss===1?'Posten':'Posten'} ohne Verkaufspreis nicht im Wert.`,`${miss} ${miss===1?'post':'posts'} without a sell price not in the value.`)}</p>`:''}
     <ul class="ck-plist">${home&&!by[home]?`<li><b>${name(home)}</b><span>${T('Homebase','Home base')}</span></li>`:''}${top.map(([l,s])=>`<li><b>${name(l)}</b><span>${nf(s)} SCU</span></li>`).join('')}</ul>`;}
 
 // Ship of the fleet that an internal ship name of the game log ("ANVL_Hornet_F7C_Mk2") means: the maker code
@@ -152,6 +159,46 @@ function dinge(){const led=read('scha_ledger_v1'), it=(led&&Array.isArray(led.it
     ${all.length>5?`<p class="ck-pmore">${T(`und ${all.length-5} weitere`,`and ${all.length-5} more`)}</p>`:''}`;}
 
 const panel=(cls,title,body,key,linkTxt)=>`<section class="ck-panel ${cls}"><h2>${esc(title)}</h2>${body}${key?`<a class="ck-plink" href="#/${key}">${esc(linkTxt)} <span aria-hidden="true">→</span></a>`:''}</section>`;
+// The first of the trade planner's "top legal bulk routes" (same list, same order), profit per SCU.
+function route(){const r=UE.route; if(!r) return na(T('Route','Route'));
+  return `<div class="ck-route"><small>${T('Top legale Bulk-Route','Top legal bulk route')} · ${T('Stand','as of')} ${esc(r.date)}</small>
+    <b>${esc(r.w)}</b> <span>${esc(r.ko)} → ${esc(r.vo)}</span> <span class="ck-pval">+${nf(r.m)} aUEC/SCU</span>
+    <a class="ck-plink" href="#/fracht/handel">${T('Alle Routen','All routes')} <span aria-hidden="true">→</span></a></div>`;}
+
+// Workshop: blueprints selected in the blueprint planner and how much of their material is in stock (the planner's
+// procurement table: one row per material and minimum quality), and Wikelo trades the inventory already covers.
+function werkstatt(){const sel=read('scbp_sel')||{}, stock=read('scbp_stock')||{}, names=Object.keys(sel).filter(n=>sel[n]>0);
+  let bp;
+  if(!UE.bp) bp=na(T('Baupläne','Blueprints'));
+  else if(!names.length) bp=`<p class="ck-pempty">${T('Noch kein Bauplan ausgewählt. Unter „Werkstatt → Baupläne“ wählst du, was du bauen willst.','No blueprint selected yet. Under “Workshop → Blueprints” you pick what to build.')}</p>`;
+  else {const agg={}; for(const n of names){const c=UE.bp[n]; if(!c) continue; for(const [m,mq,q] of c){const k=m+'|'+mq; (agg[k]=agg[k]||{n:m,q:0}).q+=q*sel[n];}}
+    const rows=Object.values(agg), done=rows.filter(r=>(stock[r.n]||0)>=r.q).length, pcs=names.reduce((a,n)=>a+sel[n],0), any=rows.some(r=>(stock[r.n]||0)>0);
+    bp=`<ul class="ck-plist"><li><b><a class="ck-jump" href="#/werkstatt/bauplan">${T('Baupläne','Blueprints')}</a></b><small>${nf(names.length)} ${T('ausgewählt','selected')}${pcs!==names.length?` · ${nf(pcs)} ${T('Stück','pieces')}`:''}</small>
+      <span>${any?T(`Material ${done} / ${rows.length} gedeckt`,`material ${done} / ${rows.length} covered`):T(`${rows.length} Materialien, Bestand noch leer`,`${rows.length} materials, stock still empty`)}</span></li></ul>`;}
+  let wk;
+  if(!UE.wk) wk=na('Wikelo');
+  else {const inv=read('sc_wikelo_inv_v1')||{}, acq=read('sc_wikelo_acq_v1')||{};
+    if(!Object.keys(inv).length) wk=`<p class="ck-pempty">${T('Noch kein Wikelo-Bestand eingetragen. Unter „Werkstatt → Wikelo“ trägst du ein, was du hast.','No Wikelo inventory entered yet. Under “Workshop → Wikelo” you enter what you have.')}</p>`;
+    else {const ready=UE.wk.filter(([rw,mi,rc])=>!acq[mi]&&rc.length&&rc.every(([n,q])=>(inv[n]||0)>=q));
+      wk=`<ul class="ck-plist"><li><b><a class="ck-jump" href="#/werkstatt/wikelo">Wikelo</a></b><small>${nf(Object.keys(inv).length)} ${T('Zutaten im Bestand','ingredients in stock')}</small>
+        <span>${ready.length?T(`${ready.length} ${ready.length===1?'Tausch':'Tausche'} bereit`,`${ready.length} ${ready.length===1?'trade':'trades'} ready`):T('noch kein Tausch bereit','no trade ready yet')}</span></li>
+        ${ready.slice(0,3).map(([rw])=>`<li><b>✓ ${esc(rw)}</b></li>`).join('')}</ul>`;}}
+  return bp+wk;}
+
+// Guide to a place: the guides whose places match the home base, the favourites, places with cargo, items or ships,
+// and the last session's place. The table comes from the build (hand-made).
+function guides(){const g=UE.guides||[], led=read('scha_ledger_v1')||{}, c=read('scha_sessions_cache_v2'), sess=c&&typeof c==='object'?Object.values(c).filter(s=>s&&s.start).sort((a,b)=>String(b.start).localeCompare(String(a.start)))[0]:null;
+  const nm=l=>String(l||'').slice(2).split('|').pop(), src=[];
+  if(led.home) src.push([nm(led.home),T('Homebase','home base')]);
+  for(const f of led.fav||[]) src.push([nm(f),T('Favorit','favourite')]);
+  for(const p of (led.stock||[]).filter(p=>p&&p.l&&p.l[0]==='p'&&p.n>0)) src.push([nm(p.l),T('Fracht','cargo')]);
+  for(const x of led.items||[]) if(x.l&&x.l[0]==='p') src.push([nm(x.l),T('Gegenstände','items')]);
+  for(const k in led.at||{}) src.push([nm(led.at[k].l),T('Schiff','ship')]);
+  if(sess&&sess.loc) src.push([pretty(sess.loc.raw),T('letzte Sitzung','last session')]);
+  const hits=[]; for(const x of g){const m=src.find(([n])=>x.k.some(k=>n.toLowerCase().includes(k.toLowerCase()))); if(m) hits.push({...x,place:m[0],why:m[1]});}
+  if(!hits.length) return `<p class="ck-pempty">${T('Kein Guide passt zu deinen Orten. Alle Guides findest du unter „Guides“.','No guide matches your places. All guides are under “Guides”.')}</p>`;
+  return `<ul class="ck-plist">${hits.slice(0,4).map(h=>`<li><b><a class="ck-jump" href="#/guides" data-guide="${esc(h.f)}" data-title="${esc(h.n)}">${esc(h.n)}</a></b><small>${esc(h.place)} · ${esc(h.why)}</small></li>`).join('')}</ul>`;}
+
 function render(el){const first=!SCData.items().length&&!(window.SCFleet&&SCFleet.read().ships.length)&&!read('scha_ledger_v1');
   el.innerHTML=`<h1>${T('Übersicht','Overview')}</h1>
     <p class="ck-lede">${T('Dein Lagebild: was zu erledigen ist, wie es um Flotte und Fracht steht, und wo du zuletzt warst.','Your status board: what there is to do, how fleet and cargo stand, and where you last were.')}</p>
@@ -159,18 +206,19 @@ function render(el){const first=!SCData.items().length&&!(window.SCFleet&&SCFlee
     <div class="ck-board">
       ${panel('ck-ptodo',T('Zu erledigen','To do')+(SCData.open().length?` (${SCData.open().length})`:''),todo())}
       ${panel('',T('Flotte','Fleet'),flotte(),'flotte',T('Zur Flotte','To the fleet'))}
-      ${panel('',T('Fracht','Cargo'),fracht(),'fracht',T('Zum Logbuch','To the ledger'))}
+      ${panel('',T('Fracht','Cargo'),fracht()+route(),'fracht',T('Zum Logbuch','To the ledger'))}
       ${panel('',T('Gegenstände','Items'),dinge(),'fracht/items',T('Zu den Gegenständen','To the items'))}
       ${panel('ck-psess',T('Letzte Sitzung','Last session'),sitzung(),'pilot',T('Zu den Sitzungen','To the sessions'))}
       ${panel('',T('Ruf','Reputation'),ruf(),'pilot',T('Zum Ruf','To the reputation'))}
-      ${panel('',T('Werkstatt','Workshop'),`<p class="ck-pempty">${T('Baupläne planen und den Tauschhandel bei Wikelo verfolgen.','Plan blueprints and track the trade with Wikelo.')}</p>`,'werkstatt',T('Zur Werkstatt','To the workshop'))}
-      ${panel('','Guides',`<p class="ck-pempty">${T('Flyer und Karten zum Lesen und Ausdrucken.','Flyers and maps to read and to print.')}</p>`,'guides',T('Zu den Guides','To the guides'))}
+      ${panel('',T('Werkstatt','Workshop'),werkstatt(),'werkstatt',T('Zur Werkstatt','To the workshop'))}
+      ${panel('',T('Guide zum Ort','Guide to the place'),guides(),'guides',T('Alle Guides','All guides'))}
     </div>`;
   // Tick a reminder; the board is drawn again by the change, so focus goes to the next open one.
   el.querySelector('.ck-board').addEventListener('change',e=>{const c=e.target.closest('input[data-id]'); if(!c) return;
     SCData.toggle(c.dataset.id,true); (document.querySelector('#ck-main .ck-ptodo input[data-id]')||document.querySelector('#ck-main h1'))?.focus({preventScroll:true});});
   // The session panel's link opens the sessions tab of the pilot. Names are jump points (Cockpit.jump).
-  el.querySelector('.ck-board').addEventListener('click',e=>{if(e.target.closest('.ck-psess .ck-plink')) C.intent={tab:'sessions'};});}
+  el.querySelector('.ck-board').addEventListener('click',e=>{if(e.target.closest('.ck-psess .ck-plink')) C.intent={tab:'sessions'};
+    const g=e.target.closest('a[data-guide]'); if(g) C.intent={guide:{url:'https://jaegerfeld.github.io/sc-guides/'+g.dataset.guide,title:g.dataset.title}};});}
 Cockpit.register('uebersicht',{render});
 })();
 """,
@@ -636,6 +684,8 @@ function start(host){
   new MutationObserver(follow).observe(html,{attributes:true,attributeFilter:['data-theme']});
 }
 Cockpit.register('guides',{render(host){if(!node) start(host); else if(node.parentNode!==host) host.replaceChildren(node);
+  // A guide handed over by the overview ("Guide zum Ort") opens in the reader.
+  const it=C.intent; if(it&&it.guide){C.intent=null; open=it.guide;}
   follow(); reader();}});
 })();
 """

@@ -196,6 +196,90 @@ def handel_dir() -> Path:
     return src
 
 
+#: Published data of the workshop planners; ``--cache`` reads the local clones instead.
+BAUPLAN_DATA = "https://jaegerfeld.github.io/StarCitizen-Bauplan-Planer/data.json"
+WIKELO_DATA = "https://jaegerfeld.github.io/StarCitizen-Wikelo-Planer/data.json"
+#: Guide to a place: words in a place name -> guide page of sc-guides (hand-made, checked against its index).
+GUIDE_PLACES = [
+    (["Checkmate", "Orbituary", "Ruin Station"], "SC_Pyro_Contested_Zones_Guide.html", "Pyro Contested Zones"),
+    (["Onyx"], "SC_Onyx_Jorrit_Guide.html", "Onyx-Anlagen & Jorrit-Dossier"),
+    (["OLP", "PAF", "Ruptura", "Vivere", "Lamina", "Attritus"], "SC_Hathor_OLP_Guide.html", "Hathor Orbital Laser Platforms"),
+    (["Breaker"], "SC_QV_Breaker_Stations_Guide.html", "QV Breaker Stations"),
+    (["ASD", "Lazarus", "Farro"], "SC_Pyro_ASD_Labs_Guide.html", "Pyro ASD Labs"),
+    (["Ghost Hollow", "Terminus"], "SC_Loot_Locations_Guide.html", "Loot-Orte"),
+]
+
+
+def published_json(url: str, local: Path | None, use_cache: bool) -> dict:
+    """Read a tool's data: from the local clone with ``--cache``, else from its published ``data.json``."""
+    if use_cache and local and (local / "data.json").exists():
+        return json.loads((local / "data.json").read_text(encoding="utf-8"))
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 sc-cockpit"})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return json.load(r)
+
+
+def overview_data(use_cache: bool) -> dict:
+    """Data the overview needs beyond the browser storage; every part is None if its source is not there.
+
+    - ``prices``: sell price per ledger commodity id, the same UEX price the cockpit's ledger values with.
+    - ``route``: the first of the Handels-Planer's "top legal bulk routes", with the price date.
+    - ``bp``: blueprint name -> costs ``[[material, min. quality, amount]]`` (Bauplan-Planer).
+    - ``wk``: active Wikelo trades ``[reward, mission, [[ingredient, amount]]]`` (Wikelo-Planer).
+    - ``guides``: the place-to-guide table above.
+
+    Args:
+        use_cache: Read the local caches and clones instead of the network.
+
+    Returns:
+        The data as a dict for the overview script.
+    """
+    out: dict = {"prices": None, "route": None, "bp": None, "wk": None,
+                 "guides": [{"k": k, "f": f, "n": n} for k, f, n in GUIDE_PLACES]}
+    try:
+        out["prices"] = {str(w["id"]): w["ps"] for w in logbuch_data(use_cache)["wares"] if w.get("ps")}
+    except (OSError, ValueError, KeyError, ImportError) as e:
+        print(f"  WARNUNG: Übersicht ohne Lagerwert ({e}).", file=sys.stderr)
+    try:
+        d = handel_data(use_cache)
+        bulk = (d.get("routes") or {}).get("bulk") or []
+        if bulk:
+            w = d["wares"][bulk[0]]
+            out["route"] = {k: w.get(k) for k in ("w", "ko", "ks", "kp", "vo", "vs", "vp", "m")}
+            out["route"].update({"min": d.get("bulk_min"), "date": str(d.get("generated") or "")[:10]})
+    except (OSError, ValueError, KeyError, ImportError, IndexError) as e:
+        print(f"  WARNUNG: Übersicht ohne Route ({e}).", file=sys.stderr)
+    try:
+        b = published_json(BAUPLAN_DATA, source_dir("SC_BAUPLAN", "_bauplan", "StarCitizen-Bauplan-Planer", "data.json"), use_cache)
+        out["bp"] = {x["name"]: [[c["n"], c.get("mq", 0), c["q"]] for c in x["costs"]] for x in b["blueprints"] if x.get("costs")}
+    except (OSError, ValueError, KeyError) as e:
+        print(f"  WARNUNG: Übersicht ohne Baupläne ({e}).", file=sys.stderr)
+    try:
+        w = published_json(WIKELO_DATA, source_dir("SC_WIKELO", "_wikelo", "StarCitizen-Wikelo-Planer", "data.json"), use_cache)["wikelo"]
+        recs = list(w.get("ships") or []) + list(w.get("items") or []) + ([w["intro_mission"]] if w.get("intro_mission") else [])
+        def parse(s: str) -> list:
+            rows = []
+            for part in str(s or "").split(";"):
+                part = part.strip()
+                m = re.match(r"^\s*(\d+)\s*x\s+(.*\S)\s*$", part)
+                if part:
+                    rows.append([m.group(2), int(m.group(1))] if m else [part, 1])
+            return rows
+        out["wk"] = [[str(r.get("reward") or r.get("name") or "").strip(), str(r.get("mission_name") or "").strip(), parse(r.get("recipe"))]
+                     for r in recs if (r.get("status") or "active") == "active"]
+    except (OSError, ValueError, KeyError) as e:
+        print(f"  WARNUNG: Übersicht ohne Wikelo ({e}).", file=sys.stderr)
+    return out
+
+
+@functools.cache
+def handel_data(use_cache: bool) -> dict:
+    """Routes and commodities of the Handels-Planer, built once per build (tool and overview use them)."""
+    hb = foreign(handel_dir(), "handels_planer_bauen")
+    rows, summary = hb.load_rows(use_cache)
+    return hb.build_data(rows, summary)
+
+
 @functools.cache
 def logbuch_data(use_cache: bool) -> dict:
     """Master data of the cargo ledger (places, commodities, ships), fetched once per build."""
@@ -444,8 +528,7 @@ def handel_tool(use_cache: bool) -> dict:
         OSError, ValueError, KeyError, ImportError: If the sources or the data are unavailable.
     """
     hb = foreign(handel_dir(), "handels_planer_bauen")
-    rows, summary = hb.load_rows(use_cache)
-    data = hb.build_data(rows, summary)
+    data = handel_data(use_cache)
     payload = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     # The page switches its views by id; the views that moved out keep an empty stand-in.
     stubs = "".join(f'<div id="view-{k}" class="hide"></div>' for k in ("ledger", "sessions", "rep"))
@@ -456,7 +539,7 @@ def handel_tool(use_cache: bool) -> dict:
             raise ValueError(f"Marke {mark} fehlt in der Vorlage des Handels-Planers")
         html = html.replace(mark, value)
     html = html.replace("__DATA_URL__", hb.DATA_URL)
-    print(f"  Routen und Waren: {len(rows)} Preiszeilen.")
+    print(f"  Routen und Waren: {len(data['rows'])} Preiszeilen.")
     return split_page(html, cb.URL["handel"])
 
 
@@ -584,6 +667,10 @@ def build(make_zip: bool = False, use_cache: bool = False) -> list[Path]:
             scripts[key] = make(use_cache)
         except (OSError, ValueError, KeyError, ImportError) as e:
             print(f"  WARNUNG: {what} nicht gebaut ({e}); der Bereich bleibt ein Wegweiser.", file=sys.stderr)
+    ue = json.dumps(overview_data(use_cache), ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+    if scripts["uebersicht"].count("/*UE_DATA*/null") != 1:
+        raise ValueError("Platzhalter /*UE_DATA*/null fehlt in der Übersicht")
+    scripts["uebersicht"] = scripts["uebersicht"].replace("/*UE_DATA*/null", ue)
     keys = [k for k, *_ in cs.AREAS]
     if sorted(scripts) != sorted(keys):
         raise ValueError(f"Bereiche und Seitenleiste passen nicht zusammen: {sorted(scripts)} / {sorted(keys)}")
