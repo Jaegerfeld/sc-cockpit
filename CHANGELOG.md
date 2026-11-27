@@ -2,6 +2,16 @@
 
 Alle nennenswerten Änderungen an diesem Projekt. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.0.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.16.0] – 2026-11-27
+
+### Hinzugefügt
+- **Übersicht nach dem Lagebild-Konzept (Skizze C).**
+  - **Fracht:** Lagerwert in aUEC, gerechnet wie im Logbuch (UEX-Verkaufspreis; Posten ohne Preis werden genannt), und die erste der „Top legalen Bulk-Routen“ aus „Routen & Waren“ mit Gewinn je SCU und Preisstand.
+  - **Flotte:** je Schiff, wie viele getauschte Teile noch zu kaufen sind (wie die Zeilen der Einkaufsliste, ohne „Habe ich schon“).
+  - **Werkstatt:** ausgewählte Baupläne und wie viele ihrer Materialien der eingetragene Bestand deckt (wie die Beschaffungstabelle des Bauplan-Planers); Wikelo-Tausche, die dein Bestand schon deckt (ohne erledigte und zurückgezogene).
+  - **Guide zum Ort:** ersetzt das Guides-Feld. Es nennt die Guides zu deinen Orten (Homebase, Favoriten, Orte mit Fracht, Gegenständen oder Schiffen, letzte Sitzung) und öffnet sie im Bereich Guides. Die Zuordnung Ort → Guide ist von Hand gepflegt: Contested Zones, Onyx, Hathor OLP/PAF, QV Breaker, ASD Labs, Loot-Orte.
+- Kommt eine Quelle beim Bau nicht, steht im Feld „beim Bau nicht verfügbar“.
+
 ## [0.15.0] – 2026-11-27
 
 ### Hinzugefügt
