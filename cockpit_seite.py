@@ -37,6 +37,7 @@ from __future__ import annotations
 #: Areas of the sidebar in their fixed order: key, icon, German and English label.
 AREAS = [
     ("uebersicht", "◎", "Übersicht", "Overview"),
+    ("karte", "🗺️", "Karte", "Map"),
     ("flotte", "🚀", "Flotte", "Fleet"),
     ("fracht", "📦", "Fracht", "Cargo"),
     ("werkstatt", "🛠️", "Werkstatt", "Workshop"),
@@ -211,6 +212,27 @@ body.ck-norail #ck-railbody{display:none}
 .ck-plist li:has(small) span{grid-row:1/3;align-self:center}
 .ck-plink{margin-top:auto;padding-top:6px;color:var(--accent2);font-family:var(--disp);font-weight:600;text-decoration:none;min-height:32px;display:inline-flex;align-items:center;gap:5px;align-self:flex-start}
 .ck-plink:hover{text-decoration:underline;text-underline-offset:3px}
+/* map */
+.ck-ksys{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px} .ck-ksys .btn{min-height:40px}
+.ck-ksys .btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:700}
+.ck-karte{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(260px,1fr);gap:16px;align-items:start}
+.ck-kwrap.narrow .ck-karte{grid-template-columns:minmax(0,1fr)} .ck-kwrap.narrow .ck-kmap svg{display:none}
+.ck-map{width:100%;height:auto;display:block;background:var(--panel2);border:1px solid var(--line);border-radius:10px}
+.ck-map .sun{fill:var(--accent2)} .ck-map .ring{fill:none;stroke:var(--line);stroke-dasharray:3 5}
+.ck-map .hit{fill:transparent} .ck-map .dot{fill:var(--panel);stroke:var(--muted);stroke-width:1.5} .ck-map .moon{fill:var(--panel);stroke:var(--muted)}
+.ck-map .body.act .dot{stroke:var(--accent);stroke-width:2.5;fill:color-mix(in srgb,var(--accent) 25%,var(--panel))}
+.ck-map .body{cursor:pointer} .ck-map .body:focus{outline:none} .ck-map .body:focus-visible .hit,.ck-map .body:hover .hit{stroke:var(--accent2);stroke-width:2}
+.ck-map .selring{fill:none;stroke:var(--accent2);stroke-width:2.5}
+.ck-map .lbl{font:600 13px var(--body);fill:var(--ink)} .ck-map .lbl.m{fill:var(--muted);font-weight:500} .ck-map .lbl.small{font-size:11.5px} .ck-map .lbl.a{fill:var(--accent2)}
+.ck-map .body:not(.act) .lbl{fill:var(--muted);font-weight:500}
+.ck-klist{display:flex;flex-direction:column;gap:6px;max-height:640px;overflow:auto}
+.ck-body{border:1px solid var(--line);border-radius:8px;background:var(--panel)} .ck-body.act{border-color:var(--accent)}
+.ck-body[open]{border-color:var(--accent2)}
+.ck-body summary{cursor:pointer;padding:8px 10px;min-height:44px;display:flex;flex-direction:column;justify-content:center;list-style-position:inside}
+.ck-body summary small{color:var(--muted);font-size:12.5px}
+.ck-body ul{list-style:none;margin:0;padding:0 10px 8px}
+.ck-body li{display:flex;flex-direction:column;padding:5px 0;border-top:1px solid var(--line);font-size:14px} .ck-body li small{color:var(--muted)}
+.ck-body li small.bd{color:var(--accent2)} .ck-body li:not(.act) a.ck-jump{color:var(--ink)}
 .ck-pval{color:var(--accent2);font-weight:700;white-space:nowrap}
 .ck-route{margin-top:10px;padding-top:8px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:2px 8px;align-items:baseline;font-size:14.5px}
 .ck-route small{flex-basis:100%;color:var(--muted);font-size:12.5px}

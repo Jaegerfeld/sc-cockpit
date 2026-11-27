@@ -2,6 +2,15 @@
 
 Alle nennenswerten Änderungen an diesem Projekt. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.0.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.17.0] – 2026-11-27
+
+### Hinzugefügt
+- **Bereich „Karte“** (Konzept Systemkarte, Variante A). Je System eine Schema-Karte, nicht maßstabsgetreu: Stern in der Mitte, Planeten auf Ringen in ihrer Reihenfolge, Monde als kleine Punkte, Orte ohne Planeten auf dem äußeren Ring, Sprungtore als Ausgang am Rand. An jedem Planeten steht, was dort liegt: 📦 Fracht, 🎖 Gegenstände, 🚀 Schiffe, ☑ offene Merker, 🏠 Homebase, ★ Favoriten, ⏱ zuletzt hier. Leere Planeten bleiben grau sichtbar.
+  - Rechts die Ortsliste je Planet mit denselben Angaben; ein Klick auf einen Planeten öffnet seinen Eintrag, ein Ort führt ins Logbuch. Auf schmalen Schirmen bleibt nur die Liste.
+  - Umschalter Stanton / Pyro / Nyx; zuerst das System der Homebase.
+  - Die Lage kommt aus UEX (Planet, Mond, Orbit je Ort, ab Handels-Planer 1.31.0), die Reihenfolge der Planeten und die Monde aus dem Star Citizen Wiki. Beides holt der tägliche Bau neu; von Hand gepflegt wird nichts.
+- **Übersicht:** Feld „Karte“ mit den Systemen, in denen etwas von dir liegt.
+
 ## [0.16.0] – 2026-11-27
 
 ### Hinzugefügt
