@@ -265,6 +265,10 @@ JS = r"""
 /* ===== Cockpit shell (cockpit_seite.py) ===== */
 window.Cockpit=(function(){
 const VERSION=/*CK_VER*/'0', AREAS=/*CK_AREAS*/[];
+// Cache key of every script under bereiche/: a short hash of its content, set by the build. An area that
+// borrows a tool (fleet, cargo …) changes without a new cockpit version; keyed by the version alone,
+// browsers went on using the old file. Unchanged files keep their key and stay cached.
+const STAMP=/*CK_STAMP*/{}, vq=k=>STAMP[k]||VERSION;
 const root=document.documentElement, $=id=>document.getElementById(id);
 const lang=()=>(root.getAttribute('data-lang')||'de').slice(0,2)==='en'?'en':'de';
 const T=(de,en)=>lang()==='en'?en:de;
@@ -286,7 +290,7 @@ let cur=null;
 function register(key,def){REG[key]=def;}
 // Load bereiche/<key>.js with a script element (works from a folder on disk as well, where fetch() is blocked).
 function load(key){if(REG[key]) return Promise.resolve();
-  if(!PEND[key]) PEND[key]=new Promise((ok,fail)=>{const s=document.createElement('script'); s.src=`bereiche/${key}.js?v=${VERSION}`;
+  if(!PEND[key]) PEND[key]=new Promise((ok,fail)=>{const s=document.createElement('script'); s.src=`bereiche/${key}.js?v=${vq(key)}`;
     const bad=()=>{s.remove(); delete PEND[key]; fail(new Error(key));};
     s.onload=()=>REG[key]?ok():bad(); s.onerror=bad; document.head.appendChild(s);});
   return PEND[key];}
@@ -500,7 +504,7 @@ function tool(host,key,info){if(TM[key]){toolFollow(key); return Promise.resolve
   const name=esc(T(info.de,info.en));
   const wait=setTimeout(()=>{host.innerHTML=`<p class="ck-state" role="status">${T('Lädt','Loading')} „${name}“ …</p>`;},150);
   return TPEND[key]=(async()=>{
-    try{if(!TOOLS[key]) await addScript(`bereiche/tool_${key}.js?v=${VERSION}`); if(!TOOLS[key]) throw new Error(key);}
+    try{if(!TOOLS[key]) await addScript(`bereiche/tool_${key}.js?v=${vq('tool_'+key)}`); if(!TOOLS[key]) throw new Error(key);}
     catch(e){clearTimeout(wait); delete TPEND[key];
       host.innerHTML=`<div class="ck-state" role="alert"><p>${T(`„${name}“ konnte nicht geladen werden. Prüfe die Verbindung; im Offline-Paket muss der Ordner „bereiche“ neben der Startdatei liegen.`,`“${name}” could not be loaded. Check the connection; in the offline package the “bereiche” folder must sit next to the start file.`)}</p>
         <p><button type="button" class="btn">${T('Erneut versuchen','Try again')}</button> <a class="btn" href="${esc(info.url)}" target="_blank" rel="noopener">${T('Im bisherigen Tool öffnen','Open in the existing tool')} <span aria-hidden="true">↗</span></a></p></div>`;

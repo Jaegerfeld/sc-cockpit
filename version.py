@@ -15,4 +15,4 @@
 """Single source of the SC Cockpit's version number (SemVer)."""
 
 #: Current version of the cockpit, shown next to the title and in the "What's new?" dialog.
-VERSION = "0.13.0"
+VERSION = "0.13.1"
