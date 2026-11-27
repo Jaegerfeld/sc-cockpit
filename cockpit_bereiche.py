@@ -62,8 +62,101 @@ URL = {
     "guides": "https://jaegerfeld.github.io/sc-guides/",
 }
 
+#: Map area (schematic system map); its data is filled in by cockpit_bauen.karte_data.
+KARTE_JS = r"""
+/* ---------- map: schematic system map from data (planets on rings, moons, stations) and the place list ---------- */
+(function(){
+const C=Cockpit, T=C.T, esc=C.esc, nf=C.nf;
+// From the build (cockpit_bauen.karte_data): places of the cargo ledger with planet/moon/orbit, planet order and moons from the wiki.
+const KD=/*KARTE*/null;
+const read=k=>{try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}};
+const norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+let node=null, sys=null, sel=null;
+
+// Which system a gateway leads to: "Pyro Gateway (Stanton)" in Stanton leads to Pyro.
+const exitTo=p=>/gateway/i.test(p.n)?(p.n.match(/^(\S+)\s+Gateway/i)||[])[1]||null:null;
+// Body a place belongs to on the map: its planet; else its orbit (Delamar, a service station); else "in space".
+const bodyOf=p=>p.pl?(KD.alias[p.sys+'|'+norm(p.pl)]||p.pl):(p.orb&&!/gateway|lagrange/i.test(p.orb)?p.orb:'');
+// What lies where, from the shared browser data (cargo ledger, items, parked ships, reminders, last session).
+function state(){const led=read('scha_ledger_v1')||{}, by={}, add=(loc,k,v)=>{if(!loc) return; const e=by[loc]||(by[loc]={scu:0,it:0,sh:0,mk:0}); e[k]+=v;};
+  for(const p of led.stock||[]) if(p&&p.l&&p.n>0) add(p.l,'scu',(+p.z||0)*(+p.n||0));
+  for(const x of led.items||[]) if(x&&x.l) add(x.l,'it',1);
+  for(const k in led.at||{}) if(led.at[k]&&led.at[k].l) add(led.at[k].l,'sh',1);
+  // A reminder belongs to its ledger place, or to the place whose name ends its shop text ("… - Area 18 (Stanton)").
+  const byName={}; for(const p of KD.places) byName[norm(p.n)]='p:'+p.id;
+  let loose=0; for(const m of (window.SCData?SCData.open():[])){const l=m.loc||(m.shop?byName[norm(String(m.shop).split(' - ').pop().replace(/\s*\([^()]*\)$/,''))]:null); if(l) add(l,'mk',1); else if(m.shop) loose++;}
+  const last=read('sc_cockpit_sitzung');
+  return {by,home:led.home||null,fav:new Set(led.fav||[]),last:last&&last.loc||null,loose};}
+const sum=(a,b)=>({scu:a.scu+b.scu,it:a.it+b.it,sh:a.sh+b.sh,mk:a.mk+b.mk});
+const Z={scu:0,it:0,sh:0,mk:0};
+const has=e=>e.scu||e.it||e.sh||e.mk;
+// Badges as symbol, number and word, so nothing depends on colour.
+function badges(e,flags){const b=[];
+  if(flags.home) b.push('🏠 '+T('Homebase','home base')); if(flags.fav) b.push('★ '+T(flags.fav>1?`${flags.fav} Favoriten`:'Favorit',flags.fav>1?`${flags.fav} favourites`:'favourite'));
+  if(flags.last) b.push('⏱ '+T('zuletzt hier','last here'));
+  if(e.scu) b.push(`📦 ${nf(e.scu)} SCU`); if(e.it) b.push(`🎖 ${nf(e.it)} ${T(e.it===1?'Gegenstand':'Gegenstände',e.it===1?'item':'items')}`);
+  if(e.sh) b.push(`🚀 ${nf(e.sh)} ${T(e.sh===1?'Schiff':'Schiffe',e.sh===1?'ship':'ships')}`); if(e.mk) b.push(`☑ ${nf(e.mk)} ${T('Merker',e.mk===1?'reminder':'reminders')}`);
+  return b;}
+// The bodies of a system in map order: planets as the wiki numbers them, then other bodies, then "in space".
+function bodies(s,st){const P=KD.places.filter(p=>p.sys===s&&!exitTo(p)), order=(KD.order[s]||[]).slice(), out=[];
+  const names=[...new Set(P.map(bodyOf))];
+  for(const n of names) if(n&&!order.includes(n)) order.push(n);
+  if(names.includes('')) order.push('');
+  for(const n of order){const ps=P.filter(p=>bodyOf(p)===n); let e=Z, fl={home:false,fav:0,last:false};
+    for(const p of ps){const l='p:'+p.id; e=sum(e,st.by[l]||Z); if(st.home===l) fl.home=true; if(st.fav.has(l)) fl.fav++; if(st.last===l) fl.last=true;}
+    out.push({n,planet:(KD.order[s]||[]).includes(n),moons:[...new Set([...(KD.moons[s+'|'+n]||[]),...ps.map(p=>p.mo).filter(Boolean)])].sort(),places:ps,e,fl});}
+  return out;}
+const label=n=>n||T('Im All','In space');
+// Schematic map: star in the middle, planets on rings in their order, other bodies on the outer ring, gateways at the edge.
+function svg(s,B,exits){const W=640, c=320, pl=B.filter(b=>b.planet), other=B.filter(b=>!b.planet), N=pl.length, R=i=>70+(i+1)*(Math.min(230,40*N+40)/(N+1));
+  let h=`<svg viewBox="0 0 ${W} ${W}" class="ck-map" role="img" aria-label="${esc(T(`Schema-Karte ${s}, nicht maßstabsgetreu`,`Schematic map of ${s}, not to scale`))}">`;
+  h+=`<circle cx="${c}" cy="${c}" r="16" class="sun"/><text x="${c}" y="${c+34}" class="lbl m" text-anchor="middle">${esc(s)}</text>`;
+  pl.forEach((b,i)=>h+=`<circle cx="${c}" cy="${c}" r="${R(i)}" class="ring"/>`);
+  if(other.length) h+=`<circle cx="${c}" cy="${c}" r="292" class="ring"/>`;
+  const node=(b,x,y)=>{x=Math.round(+x); y=Math.round(+y); const act=has(b.e)||b.fl.home||b.fl.fav||b.fl.last, bs=badges(b.e,b.fl), id=s+'|'+b.n;
+    let g=`<g class="body${act?' act':''}${sel===id?' sel':''}" data-body="${esc(id)}" role="button" tabindex="0" aria-label="${esc(label(b.n)+(bs.length?': '+bs.join(', '):': '+T('leer','empty')))}">`;
+    g+=`<circle cx="${x}" cy="${y}" r="30" class="hit"/><circle cx="${x}" cy="${y}" r="${b.planet?11:7}" class="dot"/>`;
+    b.moons.slice(0,6).forEach((m,k)=>{const a=k*Math.PI*2/Math.max(4,b.moons.length); g+=`<circle cx="${(x+18*Math.cos(a)).toFixed(1)}" cy="${(y+18*Math.sin(a)).toFixed(1)}" r="3.5" class="moon"/>`;});
+    if(sel===id) g+=`<circle cx="${x}" cy="${y}" r="19" class="selring"/>`;
+    const ty=y>c+180?y-30:y+34, short=bs.filter(t=>!/^⏱/.test(t)).map(t=>t.split(' ')[0]+(/\d/.test(t)?' '+t.split(' ')[1]:'')).join(' · ');
+    g+=`<text x="${x}" y="${ty}" class="lbl" text-anchor="middle">${esc(label(b.n))}${b.fl.last?' ⏱':''}</text>`;
+    if(short) g+=`<text x="${x}" y="${ty+15}" class="lbl small a" text-anchor="middle">${esc(short)}</text>`;
+    return g+'</g>';};
+  pl.forEach((b,i)=>{const a=-Math.PI/2+i*(Math.PI*2/Math.max(N,1))+0.35; h+=node(b,(c+R(i)*Math.cos(a)).toFixed(1),(c+R(i)*Math.sin(a)).toFixed(1));});
+  other.forEach((b,i)=>{const a=Math.PI/2-0.6+i*(1.2/Math.max(other.length-1,1))*(other.length>1?1:0); h+=node(b,(c+292*Math.cos(a)).toFixed(1),(c+292*Math.sin(a)).toFixed(1));});
+  exits.forEach((to,i)=>{const y=40+i*26; h+=`<text x="${W-14}" y="${y}" class="lbl m" text-anchor="end">→ ${esc(to)}</text>`;});
+  return h+'</svg>';}
+// Place list: one entry per body, the selected one open; each place with its badges and a jump into the ledger.
+function list(s,B,st){return B.map(b=>{const id=s+'|'+b.n, bs=badges(b.e,b.fl);
+  const rows=b.places.slice().sort((x,y)=>(x.mo||'').localeCompare(y.mo||'')||x.n.localeCompare(y.n)).map(p=>{const l='p:'+p.id, e=st.by[l]||Z, pb=badges(e,{home:st.home===l,fav:st.fav.has(l)?1:0,last:st.last===l});
+    return `<li class="${has(e)||st.home===l||st.fav.has(l)?'act':''}"><span>${C.jump('loc',l,p.n)}${p.mo?` <small>· ${esc(p.mo)}</small>`:p.orb&&p.orb!==p.pl&&p.orb!==b.n?` <small>· ${esc(p.orb)}</small>`:''}</span>${pb.length?`<small class="bd">${esc(pb.join(' · '))}</small>`:''}</li>`;}).join('');
+  return `<details class="ck-body${has(b.e)||b.fl.home||b.fl.fav?' act':''}" data-body="${esc(id)}"${sel===id?' open':''}><summary><b>${esc(label(b.n))}</b>${bs.length?`<small>${esc(bs.join(' · '))}</small>`:`<small>${T('leer','empty')}</small>`}</summary>
+    ${rows?`<ul>${rows}</ul>`:`<p class="ck-pempty">${T('Hier kennt das Logbuch keinen Ort mit Frachtaufzug.','The ledger knows no place with a freight elevator here.')}</p>`}</details>`;}).join('');}
+function draw(){if(!KD){node.querySelector('.ck-karte').innerHTML=`<p class="ck-pempty">${T('Die Kartendaten waren beim Bau nicht verfügbar.','The map data was not available at build time.')}</p>`; return;}
+  const st=state(), systems=[...new Set(KD.places.map(p=>p.sys))];
+  if(!sys) sys=st.home&&KD.places.find(p=>'p:'+p.id===st.home)?.sys||systems[0];
+  const B=bodies(sys,st), exits=[...new Set(KD.places.filter(p=>p.sys===sys).map(exitTo).filter(Boolean))], any=B.some(b=>has(b.e));
+  node.querySelector('.ck-ksys').innerHTML=systems.map(s=>`<button type="button" class="btn" data-sys="${esc(s)}" aria-pressed="${s===sys}">${esc(s)}</button>`).join('');
+  node.querySelector('.ck-karte').innerHTML=`<div class="ck-kmap">${svg(sys,B,exits)}${any?'':`<p class="ck-pempty">${T(`In ${sys} liegt noch nichts von dir. Fracht, Gegenstände und Schiffe trägst du im Logbuch unter „Fracht“ ein.`,`Nothing of yours is in ${sys} yet. You enter cargo, items and ships in the ledger under “Cargo”.`)}</p>`}</div>
+    <div class="ck-klist" aria-label="${esc(T('Orte','Places'))}">${list(sys,B,st)}${st.loose?`<p class="ck-pmore">${T(`${st.loose} Merker mit Händler ließen sich keinem Ort zuordnen.`,`${st.loose} reminders with a shop could not be matched to a place.`)}</p>`:''}</div>`;}
+function pick(id){sel=sel===id?null:id; draw(); const d=node.querySelector(`.ck-klist details[data-body="${CSS.escape(id)}"]`); if(d&&sel){d.open=true; d.scrollIntoView({block:'nearest',behavior:'smooth'}); d.querySelector('summary').focus({preventScroll:true});}}
+function start(el){node=document.createElement('div'); node.className='ck-kwrap';
+  node.innerHTML=`<h1>${T('Karte','Map')}</h1>
+    <p class="ck-lede">${T('Wo liegt was? Schema-Karte je System, nicht maßstabsgetreu: Planeten auf ihren Ringen, Monde als kleine Punkte. Ein Klick auf einen Planeten öffnet rechts seine Orte; ein Ort führt ins Logbuch.','What is where? Schematic map per system, not to scale: planets on their rings, moons as small dots. A click on a planet opens its places on the right; a place leads into the ledger.')}</p>
+    <div class="ck-ksys" role="group" aria-label="${esc(T('System','System'))}"></div><div class="ck-karte"></div>`;
+  el.replaceChildren(node);
+  node.addEventListener('click',e=>{const s=e.target.closest('[data-sys]'); if(s){sys=s.dataset.sys; sel=null; draw(); return;}
+    const g=e.target.closest('svg [data-body]'); if(g) pick(g.dataset.body);});
+  node.addEventListener('keydown',e=>{const g=e.target.closest&&e.target.closest('svg [data-body]'); if(g&&(e.key==='Enter'||e.key===' ')){e.preventDefault(); pick(g.dataset.body);}});
+  node.addEventListener('toggle',e=>{const d=e.target; if(d.matches&&d.matches('details[data-body]')&&d.open&&sel!==d.dataset.body){sel=d.dataset.body; node.querySelectorAll('svg [data-body]').forEach(x=>x.classList.toggle('sel',x.dataset.body===sel));}},true);
+  new ResizeObserver(()=>{const w=node.clientWidth; if(w) node.classList.toggle('narrow',w<760);}).observe(node);}
+Cockpit.register('karte',{render(el){if(!node) start(el); else if(node.parentNode!==el) el.replaceChildren(node); node.querySelector('h1').textContent=T('Karte','Map'); draw();}});
+})();
+"""
+
 #: Area key -> script. Every script registers itself with Cockpit.register(key, {render}).
 BEREICHE: dict[str, str] = {
+    "karte": KARTE_JS,
     "uebersicht": r"""
 /* ---------- overview: status board from the shared data ---------- */
 (function(){
@@ -159,6 +252,15 @@ function dinge(){const led=read('scha_ledger_v1'), it=(led&&Array.isArray(led.it
     ${all.length>5?`<p class="ck-pmore">${T(`und ${all.length-5} weitere`,`and ${all.length-5} more`)}</p>`:''}`;}
 
 const panel=(cls,title,body,key,linkTxt)=>`<section class="ck-panel ${cls}"><h2>${esc(title)}</h2>${body}${key?`<a class="ck-plink" href="#/${key}">${esc(linkTxt)} <span aria-hidden="true">→</span></a>`:''}</section>`;
+// Map: in which systems something of yours lies (places with cargo, items or parked ships).
+function karte(){const led=read('scha_ledger_v1')||{}, locs=new Set();
+  for(const p of led.stock||[]) if(p&&p.l&&p.l[0]==='p'&&p.n>0) locs.add(p.l);
+  for(const x of led.items||[]) if(x&&x.l&&x.l[0]==='p') locs.add(x.l);
+  for(const k in led.at||{}) if(led.at[k]&&led.at[k].l) locs.add(led.at[k].l);
+  if(!locs.size) return `<p class="ck-pempty">${T('Die Karte zeigt je System, wo deine Fracht, Gegenstände und Schiffe liegen.','The map shows per system where your cargo, items and ships are.')}</p>`;
+  const by={}; for(const l of locs){const s=l.slice(2).split('|')[0]; by[s]=(by[s]||0)+1;}
+  return `<ul class="ck-plist">${Object.entries(by).sort((a,b)=>b[1]-a[1]).map(([s,n])=>`<li><b>${esc(s)}</b><span>${nf(n)} ${T(n===1?'Ort':'Orte',n===1?'place':'places')}</span></li>`).join('')}</ul>`;}
+
 // The first of the trade planner's "top legal bulk routes" (same list, same order), profit per SCU.
 function route(){const r=UE.route; if(!r) return na(T('Route','Route'));
   return `<div class="ck-route"><small>${T('Top legale Bulk-Route','Top legal bulk route')} · ${T('Stand','as of')} ${esc(r.date)}</small>
@@ -207,6 +309,7 @@ function render(el){const first=!SCData.items().length&&!(window.SCFleet&&SCFlee
       ${panel('ck-ptodo',T('Zu erledigen','To do')+(SCData.open().length?` (${SCData.open().length})`:''),todo())}
       ${panel('',T('Flotte','Fleet'),flotte(),'flotte',T('Zur Flotte','To the fleet'))}
       ${panel('',T('Fracht','Cargo'),fracht()+route(),'fracht',T('Zum Logbuch','To the ledger'))}
+      ${panel('',T('Karte','Map'),karte(),'karte',T('Zur Karte','To the map'))}
       ${panel('',T('Gegenstände','Items'),dinge(),'fracht/items',T('Zu den Gegenständen','To the items'))}
       ${panel('ck-psess',T('Letzte Sitzung','Last session'),sitzung(),'pilot',T('Zu den Sitzungen','To the sessions'))}
       ${panel('',T('Ruf','Reputation'),ruf(),'pilot',T('Zum Ruf','To the reputation'))}

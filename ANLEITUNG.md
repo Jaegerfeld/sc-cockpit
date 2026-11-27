@@ -26,6 +26,12 @@ Alle Daten liegen in deinem Browser. Es gibt kein Konto und keinen Server.
 4. **Flotte** zeigt je Schiff getauschte Teile, Fracht an Bord und offene Merker. **Fracht** zeigt die Summe und die Orte mit der meisten Fracht.
 5. **Letzte Sitzung** zeigt die zuletzt gelesene abgeschlossene Sitzung. Dazu musst du im Handels-Planer unter „Sitzungen“ einmal deinen Log-Ordner gelesen haben.
 
+## Karte
+
+1. **Karte** in der Seitenleiste zeigt je System, wo deine Fracht, Gegenstände, Schiffe und Merker liegen. Die Karte ist schematisch, nicht maßstabsgetreu.
+2. Ein Klick auf einen Planeten öffnet rechts seine Orte; ein Ort führt ins Fracht-Logbuch.
+3. Oben wechselst du zwischen Stanton, Pyro und Nyx.
+
 ## Merker
 
 1. Schreib rechts unter **Neuer Merker**, was du im Spiel erledigen willst, zum Beispiel „Hull B bei Area18 abholen“, und klick auf **Hinzufügen** (oder Enter). Hast du Schiffe in der Flotte, kannst du darunter ein **Schiff** dazu wählen.

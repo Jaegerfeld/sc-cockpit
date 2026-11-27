@@ -92,6 +92,15 @@ function dinge(){const led=read('scha_ledger_v1'), it=(led&&Array.isArray(led.it
     ${all.length>5?`<p class="ck-pmore">${T(`und ${all.length-5} weitere`,`and ${all.length-5} more`)}</p>`:''}`;}
 
 const panel=(cls,title,body,key,linkTxt)=>`<section class="ck-panel ${cls}"><h2>${esc(title)}</h2>${body}${key?`<a class="ck-plink" href="#/${key}">${esc(linkTxt)} <span aria-hidden="true">→</span></a>`:''}</section>`;
+// Map: in which systems something of yours lies (places with cargo, items or parked ships).
+function karte(){const led=read('scha_ledger_v1')||{}, locs=new Set();
+  for(const p of led.stock||[]) if(p&&p.l&&p.l[0]==='p'&&p.n>0) locs.add(p.l);
+  for(const x of led.items||[]) if(x&&x.l&&x.l[0]==='p') locs.add(x.l);
+  for(const k in led.at||{}) if(led.at[k]&&led.at[k].l) locs.add(led.at[k].l);
+  if(!locs.size) return `<p class="ck-pempty">${T('Die Karte zeigt je System, wo deine Fracht, Gegenstände und Schiffe liegen.','The map shows per system where your cargo, items and ships are.')}</p>`;
+  const by={}; for(const l of locs){const s=l.slice(2).split('|')[0]; by[s]=(by[s]||0)+1;}
+  return `<ul class="ck-plist">${Object.entries(by).sort((a,b)=>b[1]-a[1]).map(([s,n])=>`<li><b>${esc(s)}</b><span>${nf(n)} ${T(n===1?'Ort':'Orte',n===1?'place':'places')}</span></li>`).join('')}</ul>`;}
+
 // The first of the trade planner's "top legal bulk routes" (same list, same order), profit per SCU.
 function route(){const r=UE.route; if(!r) return na(T('Route','Route'));
   return `<div class="ck-route"><small>${T('Top legale Bulk-Route','Top legal bulk route')} · ${T('Stand','as of')} ${esc(r.date)}</small>
@@ -140,6 +149,7 @@ function render(el){const first=!SCData.items().length&&!(window.SCFleet&&SCFlee
       ${panel('ck-ptodo',T('Zu erledigen','To do')+(SCData.open().length?` (${SCData.open().length})`:''),todo())}
       ${panel('',T('Flotte','Fleet'),flotte(),'flotte',T('Zur Flotte','To the fleet'))}
       ${panel('',T('Fracht','Cargo'),fracht()+route(),'fracht',T('Zum Logbuch','To the ledger'))}
+      ${panel('',T('Karte','Map'),karte(),'karte',T('Zur Karte','To the map'))}
       ${panel('',T('Gegenstände','Items'),dinge(),'fracht/items',T('Zu den Gegenständen','To the items'))}
       ${panel('ck-psess',T('Letzte Sitzung','Last session'),sitzung(),'pilot',T('Zu den Sitzungen','To the sessions'))}
       ${panel('',T('Ruf','Reputation'),ruf(),'pilot',T('Zum Ruf','To the reputation'))}

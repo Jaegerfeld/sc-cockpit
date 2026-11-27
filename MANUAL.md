@@ -26,6 +26,12 @@ All data stays in your browser. There is no account and no server.
 4. **Fleet** shows swapped parts, cargo aboard and open reminders per ship. **Cargo** shows the total and the places holding the most.
 5. **Last session** shows the last finished session that was read. For that you must have read your log folder once under "Sessions" in the trade planner.
 
+## Map
+
+1. **Map** in the sidebar shows per system where your cargo, items, ships and reminders are. The map is schematic, not to scale.
+2. A click on a planet opens its places on the right; a place leads into the cargo ledger.
+3. At the top you switch between Stanton, Pyro and Nyx.
+
 ## Reminders
 
 1. Under **New reminder** on the right, write what you want to get done in the game, for example "fetch the Hull B at Area18", and click **Add** (or press Enter). If your fleet has ships, you can pick a **ship** for it below.

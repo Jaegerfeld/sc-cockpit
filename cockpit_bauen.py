@@ -272,6 +272,88 @@ def overview_data(use_cache: bool) -> dict:
     return out
 
 
+#: Wiki API locations (all pages) give the order of planets ("Stanton I" …) and their moons ("Stanton Ia" …).
+WIKI_LOCATIONS = "https://api.star-citizen.wiki/api/v2/locations"
+#: Local cache of the wiki locations for ``--cache`` builds (gitignored).
+KARTE_CACHE = HERE / "karte_cache.json"
+
+
+def wiki_locations(use_cache: bool) -> list[dict]:
+    """All locations of the wiki API (name, designation, system, type), from the cache with ``--cache``."""
+    if use_cache and KARTE_CACHE.exists():
+        return json.loads(KARTE_CACHE.read_text(encoding="utf-8"))
+    out, page = [], 1
+    while True:
+        req = urllib.request.Request(f"{WIKI_LOCATIONS}?page%5Bsize%5D=200&page%5Bnumber%5D={page}",
+                                     headers={"User-Agent": "Mozilla/5.0 sc-cockpit", "Accept": "application/json"})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            d = json.load(r)
+        out += [{"n": x.get("name"), "d": x.get("designation"), "s": x.get("system"),
+                 "t": (x.get("type") or {}).get("classification")} for x in d["data"]]
+        if page >= (d.get("meta") or {}).get("last_page", 1):
+            break
+        page += 1
+    if use_cache:
+        KARTE_CACHE.write_text(json.dumps(out), encoding="utf-8")
+    return out
+
+
+def karte_data(use_cache: bool) -> dict | None:
+    """Data of the map area: ledger places with planet/moon/orbit, planet order and moons per planet.
+
+    Planets are ordered by their wiki designation (Stanton I … IV); a moon belongs to the planet whose
+    designation it extends (Stanton Ia → Stanton I). UEX and wiki names are matched without case.
+    Without the wiki the planets keep the order of their names.
+
+    Args:
+        use_cache: Read the local caches instead of the network.
+
+    Returns:
+        ``{"places", "order", "moons", "alias"}``, or None without ledger places.
+    """
+    try:
+        places = [{k: p[k] for k in ("id", "n", "sys", "pl", "mo", "orb") if p.get(k)} for p in logbuch_data(use_cache)["places"]]
+    except (OSError, ValueError, KeyError, ImportError) as e:
+        print(f"  WARNUNG: Karte ohne Orte ({e}).", file=sys.stderr)
+        return None
+    systems = sorted({p["sys"] for p in places}, key=lambda s: (s != "Stanton", s))
+    uex = {s: sorted({p["pl"] for p in places if p["sys"] == s and p.get("pl")}) for s in systems}
+    order: dict = {s: list(uex[s]) for s in systems}
+    moons: dict = {}
+    alias: dict = {}
+    roman = {"I": 1, "II": 2, "III": 3, "IV": 4, "V": 5, "VI": 6, "VII": 7, "VIII": 8, "IX": 9, "X": 10}
+    try:
+        locs = wiki_locations(use_cache)
+        for s in systems:
+            pat = re.compile(rf"^{re.escape(s)} ([IVX]+)([a-z]?)$")
+            planets, mo = {}, {}
+            for x in locs:
+                m = pat.match(x.get("d") or "")
+                # Only planets and moons: outposts and asteroids carry the same designations.
+                if not (m and x.get("n") and m.group(1) in roman) or x.get("t") not in ("Planet", "Moon"):
+                    continue
+                (mo.setdefault(m.group(1), []) if x["t"] == "Moon" else planets.setdefault(m.group(1), [])).append(x["n"])
+            # Several wiki entries can carry one designation (microTech/"Green"); the UEX name wins.
+            by_norm = {re.sub(r"[^a-z0-9]", "", n.lower()): n for n in uex[s]}
+            seq = []
+            for num in sorted(planets, key=lambda k: roman[k]):
+                names = planets[num]
+                hit = next((by_norm[re.sub(r"[^a-z0-9]", "", n.lower())] for n in names if re.sub(r"[^a-z0-9]", "", n.lower()) in by_norm), None)
+                name = hit or names[0]
+                seq.append(name)
+                for n in names:
+                    alias[f"{s}|{re.sub(r'[^a-z0-9]', '', n.lower())}"] = name
+                moons[f"{s}|{name}"] = sorted(set(mo.get(num, [])))
+            if seq:
+                order[s] = seq + [p for p in uex[s] if p not in seq]
+    except (OSError, ValueError, KeyError) as e:
+        print(f"  WARNUNG: Karte ohne Planetenreihenfolge aus dem Wiki ({e}).", file=sys.stderr)
+    for s in systems:
+        for n in uex[s]:
+            alias.setdefault(f"{s}|{re.sub(r'[^a-z0-9]', '', n.lower())}", n)
+    return {"places": places, "order": order, "moons": moons, "alias": alias}
+
+
 @functools.cache
 def handel_data(use_cache: bool) -> dict:
     """Routes and commodities of the Handels-Planer, built once per build (tool and overview use them)."""
@@ -667,6 +749,10 @@ def build(make_zip: bool = False, use_cache: bool = False) -> list[Path]:
             scripts[key] = make(use_cache)
         except (OSError, ValueError, KeyError, ImportError) as e:
             print(f"  WARNUNG: {what} nicht gebaut ({e}); der Bereich bleibt ein Wegweiser.", file=sys.stderr)
+    kd = json.dumps(karte_data(use_cache), ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+    if scripts["karte"].count("/*KARTE*/null") != 1:
+        raise ValueError("Platzhalter /*KARTE*/null fehlt in der Karte")
+    scripts["karte"] = scripts["karte"].replace("/*KARTE*/null", kd)
     ue = json.dumps(overview_data(use_cache), ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     if scripts["uebersicht"].count("/*UE_DATA*/null") != 1:
         raise ValueError("Platzhalter /*UE_DATA*/null fehlt in der Übersicht")
