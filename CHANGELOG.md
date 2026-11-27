@@ -2,6 +2,12 @@
 
 Alle nennenswerten Änderungen an diesem Projekt. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.0.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.15.0] – 2026-11-27
+
+### Hinzugefügt
+- **Favoriten und Schiffsstandorte** im Fracht-Logbuch (aus dem Handels-Planer 1.30.0): Orte als ★ Favorit merken, sie stehen nach der Homebase vorn; am Ort festhalten, welche Schiffe dort stehen.
+- **Übersicht, Feld „Flotte“:** Bei jedem Schiff steht sein Standort, wenn er im Logbuch eingetragen ist; der Ortsname ist ein Sprungpunkt.
+
 ## [0.14.0] – 2026-11-27
 
 ### Hinzugefügt
