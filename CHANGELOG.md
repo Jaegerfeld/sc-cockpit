@@ -2,6 +2,14 @@
 
 Alle nennenswerten Änderungen an diesem Projekt. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.0.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.18.0] – 2026-11-27
+
+### Geändert
+- **Karte: Lage wie auf der Sternkarte.** Planeten, Sprungtore und die Stationen in Nyx stehen jetzt in der Richtung, in der die Sternkarte im Spiel sie zeigt (von oben, nicht gedreht; abgelesen aus Screenshots, Stand 4.10.3). Die Abstände bleiben gestaucht, die Reihenfolge vom Stern stimmt.
+  - **Pyro** hat fünf Planeten: **Pyro IV ist ein Mond von Pyro V** (die Sternkarte zieht für ihn keine eigene Bahn; das Wiki führt ihn als Planeten). Orte auf Pyro IV stehen bei Pyro V.
+  - **Nyx** zeigt Nyx I–III und den Glaciem-Ring mit Delamar (Levski) als Gürtel. Nyx I–III sind auf der Sternkarte schon da, aber noch nicht erreichbar (Nyx I kommt mit 5.0); bis dahin bleiben sie grau. Sobald UEX dort Orte führt, erscheinen sie ohne Änderung an der Karte.
+  - Die Winkel stehen als kleine, von Hand gepflegte Tabelle im Bau (`KARTE_LAGE`). Nachziehen nur, wenn ein Patch Himmelskörper oder Sprungtore ändert (neue Systeme 2027/2028).
+
 ## [0.17.0] – 2026-11-27
 
 ### Hinzugefügt

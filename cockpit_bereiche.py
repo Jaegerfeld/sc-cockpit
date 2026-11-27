@@ -108,10 +108,12 @@ function bodies(s,st){const P=KD.places.filter(p=>p.sys===s&&!exitTo(p)), order=
   return out;}
 const label=n=>n||T('Im All','In space');
 // Schematic map: star in the middle, planets on rings in their order, other bodies on the outer ring, gateways at the edge.
+// Angles as on the in-game starmap where the build knows them (KD.lage, 0° = right, counter-clockwise); distances compressed.
 function svg(s,B,exits){const W=640, c=320, pl=B.filter(b=>b.planet), other=B.filter(b=>!b.planet), N=pl.length, R=i=>70+(i+1)*(Math.min(230,40*N+40)/(N+1));
-  let h=`<svg viewBox="0 0 ${W} ${W}" class="ck-map" role="img" aria-label="${esc(T(`Schema-Karte ${s}, nicht maßstabsgetreu`,`Schematic map of ${s}, not to scale`))}">`;
+  const L=(KD.lage||{})[s]||{}, ang=n=>L.a&&L.a[n]!=null?-L.a[n]*Math.PI/180:null;
+  let h=`<svg viewBox="0 0 ${W} ${W}" class="ck-map" role="img" aria-label="${esc(T(`Karte ${s}: Lage wie auf der Sternkarte, Abstände gestaucht`,`Map of ${s}: positions as on the starmap, distances compressed`))}">`;
   h+=`<circle cx="${c}" cy="${c}" r="16" class="sun"/><text x="${c}" y="${c+34}" class="lbl m" text-anchor="middle">${esc(s)}</text>`;
-  pl.forEach((b,i)=>h+=`<circle cx="${c}" cy="${c}" r="${R(i)}" class="ring"/>`);
+  pl.forEach((b,i)=>h+=`<circle cx="${c}" cy="${c}" r="${R(i)}" class="ring${L.belt===b.n?' belt':''}"/>`);
   if(other.length) h+=`<circle cx="${c}" cy="${c}" r="292" class="ring"/>`;
   const node=(b,x,y)=>{x=Math.round(+x); y=Math.round(+y); const act=has(b.e)||b.fl.home||b.fl.fav||b.fl.last, bs=badges(b.e,b.fl), id=s+'|'+b.n;
     let g=`<g class="body${act?' act':''}${sel===id?' sel':''}" data-body="${esc(id)}" role="button" tabindex="0" aria-label="${esc(label(b.n)+(bs.length?': '+bs.join(', '):': '+T('leer','empty')))}">`;
@@ -119,12 +121,18 @@ function svg(s,B,exits){const W=640, c=320, pl=B.filter(b=>b.planet), other=B.fi
     b.moons.slice(0,6).forEach((m,k)=>{const a=k*Math.PI*2/Math.max(4,b.moons.length); g+=`<circle cx="${(x+18*Math.cos(a)).toFixed(1)}" cy="${(y+18*Math.sin(a)).toFixed(1)}" r="3.5" class="moon"/>`;});
     if(sel===id) g+=`<circle cx="${x}" cy="${y}" r="19" class="selring"/>`;
     const ty=y>c+180?y-30:y+34, short=bs.filter(t=>!/^⏱/.test(t)).map(t=>t.split(' ')[0]+(/\d/.test(t)?' '+t.split(' ')[1]:'')).join(' · ');
-    g+=`<text x="${x}" y="${ty}" class="lbl" text-anchor="middle">${esc(label(b.n))}${b.fl.last?' ⏱':''}</text>`;
-    if(short) g+=`<text x="${x}" y="${ty+15}" class="lbl small a" text-anchor="middle">${esc(short)}</text>`;
+    // Long names shortened on the map only ("People's Service Station Delta" -> "PSS Delta"); near the edge the label grows inwards.
+    const nm=label(b.n), w=nm.split(' '), ln=nm.length>18&&w.length>2?w.slice(0,-1).map(v=>v[0].toUpperCase()).join('')+' '+w[w.length-1]:nm;
+    const tx=x>W-110?x+12:x<110?x-12:x, ta=x>W-110?'end':x<110?'start':'middle';
+    g+=`<text x="${tx}" y="${ty}" class="lbl" text-anchor="${ta}">${esc(ln)}${b.fl.last?' ⏱':''}</text>`;
+    if(short) g+=`<text x="${tx}" y="${ty+15}" class="lbl small a" text-anchor="${ta}">${esc(short)}</text>`;
     return g+'</g>';};
-  pl.forEach((b,i)=>{const a=-Math.PI/2+i*(Math.PI*2/Math.max(N,1))+0.35; h+=node(b,(c+R(i)*Math.cos(a)).toFixed(1),(c+R(i)*Math.sin(a)).toFixed(1));});
-  other.forEach((b,i)=>{const a=Math.PI/2-0.6+i*(1.2/Math.max(other.length-1,1))*(other.length>1?1:0); h+=node(b,(c+292*Math.cos(a)).toFixed(1),(c+292*Math.sin(a)).toFixed(1));});
-  exits.forEach((to,i)=>{const y=40+i*26; h+=`<text x="${W-14}" y="${y}" class="lbl m" text-anchor="end">→ ${esc(to)}</text>`;});
+  pl.forEach((b,i)=>{const a=ang(b.n)??(-Math.PI/2+i*(Math.PI*2/Math.max(N,1))+0.35); h+=node(b,(c+R(i)*Math.cos(a)).toFixed(1),(c+R(i)*Math.sin(a)).toFixed(1));});
+  other.forEach((b,i)=>{const a=ang(b.n)??(Math.PI/2-0.6+i*(1.2/Math.max(other.length-1,1))*(other.length>1?1:0)); h+=node(b,(c+292*Math.cos(a)).toFixed(1),(c+292*Math.sin(a)).toFixed(1));});
+  // Gateways: at their starmap angle on the edge where known, else listed in the top right corner.
+  let k=0; exits.forEach(to=>{const d=L.x&&L.x[to]; if(d==null){h+=`<text x="${W-14}" y="${40+k++*26}" class="lbl m" text-anchor="end">→ ${esc(to)}</text>`; return;}
+    const a=-d*Math.PI/180, cx=Math.cos(a), x=Math.min(W-12,Math.max(12,c+306*cx)), y=Math.min(W-10,Math.max(22,c+306*Math.sin(a)+4));
+    h+=`<text x="${x.toFixed(0)}" y="${y.toFixed(0)}" class="lbl m" text-anchor="${cx>0.3?'end':cx<-0.3?'start':'middle'}">→ ${esc(to)}</text>`;});
   return h+'</svg>';}
 // Place list: one entry per body, the selected one open; each place with its badges and a jump into the ledger.
 function list(s,B,st){return B.map(b=>{const id=s+'|'+b.n, bs=badges(b.e,b.fl);
@@ -142,7 +150,7 @@ function draw(){if(!KD){node.querySelector('.ck-karte').innerHTML=`<p class="ck-
 function pick(id){sel=sel===id?null:id; draw(); const d=node.querySelector(`.ck-klist details[data-body="${CSS.escape(id)}"]`); if(d&&sel){d.open=true; d.scrollIntoView({block:'nearest',behavior:'smooth'}); d.querySelector('summary').focus({preventScroll:true});}}
 function start(el){node=document.createElement('div'); node.className='ck-kwrap';
   node.innerHTML=`<h1>${T('Karte','Map')}</h1>
-    <p class="ck-lede">${T('Wo liegt was? Schema-Karte je System, nicht maßstabsgetreu: Planeten auf ihren Ringen, Monde als kleine Punkte. Ein Klick auf einen Planeten öffnet rechts seine Orte; ein Ort führt ins Logbuch.','What is where? Schematic map per system, not to scale: planets on their rings, moons as small dots. A click on a planet opens its places on the right; a place leads into the ledger.')}</p>
+    <p class="ck-lede">${T('Wo liegt was? Karte je System, Lage wie auf der Sternkarte im Spiel, Abstände gestaucht: Planeten auf ihren Ringen, Monde als kleine Punkte. Ein Klick auf einen Planeten öffnet rechts seine Orte; ein Ort führt ins Logbuch.','What is where? Map per system, positions as on the in-game starmap, distances compressed: planets on their rings, moons as small dots. A click on a planet opens its places on the right; a place leads into the ledger.')}</p>
     <div class="ck-ksys" role="group" aria-label="${esc(T('System','System'))}"></div><div class="ck-karte"></div>`;
   el.replaceChildren(node);
   node.addEventListener('click',e=>{const s=e.target.closest('[data-sys]'); if(s){sys=s.dataset.sys; sel=null; draw(); return;}

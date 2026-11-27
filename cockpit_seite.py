@@ -218,7 +218,7 @@ body.ck-norail #ck-railbody{display:none}
 .ck-karte{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(260px,1fr);gap:16px;align-items:start}
 .ck-kwrap.narrow .ck-karte{grid-template-columns:minmax(0,1fr)} .ck-kwrap.narrow .ck-kmap svg{display:none}
 .ck-map{width:100%;height:auto;display:block;background:var(--panel2);border:1px solid var(--line);border-radius:10px}
-.ck-map .sun{fill:var(--accent2)} .ck-map .ring{fill:none;stroke:var(--line);stroke-dasharray:3 5}
+.ck-map .sun{fill:var(--accent2)} .ck-map .ring{fill:none;stroke:var(--line);stroke-dasharray:3 5} .ck-map .ring.belt{stroke-width:4;stroke-dasharray:1 6;stroke-linecap:round}
 .ck-map .hit{fill:transparent} .ck-map .dot{fill:var(--panel);stroke:var(--muted);stroke-width:1.5} .ck-map .moon{fill:var(--panel);stroke:var(--muted)}
 .ck-map .body.act .dot{stroke:var(--accent);stroke-width:2.5;fill:color-mix(in srgb,var(--accent) 25%,var(--panel))}
 .ck-map .body{cursor:pointer} .ck-map .body:focus{outline:none} .ck-map .body:focus-visible .hit,.ck-map .body:hover .hit{stroke:var(--accent2);stroke-width:2}
